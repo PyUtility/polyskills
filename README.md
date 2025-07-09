@@ -23,13 +23,13 @@ requirement to maintain a unified, standardized repository of these capabilities
 
 ### 🤖 Project Capabilities
 
-The project provides a curated list of AI [agents](./agents/), [skills](./skills/), and other essential tools that enhances the
-way AI agents works and performs. In addition, the skills also provides different customization rules (e.g., generate an code
-output the way you write code, or generate email content based on your own writing styles).
+The project provides a curated list of AI [agents](./library/agents/), [skills](./library//skills/), and other essential tools
+that enhances the way AI agents works and performs. In addition, the skills also provides different customization rules (e.g., 
+generate an code output the way you write code, or generate email content based on your own writing styles).
 
-  * A categorized list of [AI Skills](./skills/) in a standard [Agent Skills](https://agentskills.io/home) format to give
-    new capabilities and expertise.
-  * A list of [AI Agents](./agents/) to break tasks into seperate functional groups that can work concurrently or in a
+  * A categorized list of [AI Skills](./library//skills/) in a standard [Agent Skills](https://agentskills.io/home) format to
+    give new capabilities and expertise.
+  * A list of [AI Agents](./library/agents/) to break tasks into seperate functional groups that can work concurrently or in a
     sequential manner as per the design pattern.
   * A dedicated *open-source* Python framework to manage all above skills, agents, etc. from any version controlled remote
     repositories across different systems and projects using single source of truth.
@@ -40,22 +40,22 @@ output the way you write code, or generate email content based on your own writi
 
 LLM Tools like Anthropic's Claude Code can directly work with the Agent Skills format that invokes `SKILLS.md` (or `AGENTS.md`)
 file natively based on skill description or keywords defined in a settings file. However, some other tools may require an
-adapter to safely convert to system prompts. The Python [`framework`](...) is designed to address the issue by importing the
-required skills from any version controlled systems such that one single source of truth can be maintained across different
+adapter to safely convert to system prompts. The Python [`framework`](./polyskills/) is designed to address the issue by importing
+the required skills from any version controlled systems such that one single source of truth can be maintained across different
 production environment or projects having the same functionalities - thus providing consistent output.
 
-The package is hosted at [PyPI](...) and can be installed using the `pip` package manager as:
+The package is hosted at [PyPI](http://pypi.org/project/polyskills/) and can be installed using the `pip` package manager as:
 
 ```shell
-$ pip install ...
+$ pip install polyskills
 ```
 
 To install the package from source, you need to have `git` client available on your system and install the binaries using the
 below command:
 
 ```shell
-$ git clone ...
-$ pip install ...
+$ git clone https://github.com/PyUtility/polyskills
+$ pip install . # cd into polyskills; editable install using -e
 ```
 
 The `**library**` requires **Python 3.12+** and is designed to have minimal overheads, thus providing *long-term compatibility*
