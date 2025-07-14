@@ -58,17 +58,18 @@ def buildParser() -> argparse.ArgumentParser:
     # ? Creating Subparsers:: MANAGE - Manage Remote Library
     manager = subparser.add_parser(
         "manager", help = (
-            "Main method to manage skills, agents, etc. from remote "
-            "sources, i.e., to fetch and/or update the library "
-            "content in different projects or systems. Check "
-            "polyskills manage --help for more details."
+            "Main method to manage skills, agents, etc. for a LLM "
+            "tool, from remote sources, i.e., to fetch and/or update "
+            "the library content in different projects or systems. "
+            "Check 'polyskills manage --help' for more details."
         )
     )
 
     manager.add_argument(
         "remote", help = (
             "Remote URL for the Skills Repository, e.g., "
-            "https://github.com/<owner>/<repository>"
+            "https://github.com/<owner>/<repository>. Check the list "
+            "of supported remote sources using 'polyskills sources'."
         )
     )
 
