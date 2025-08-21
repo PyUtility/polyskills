@@ -73,6 +73,42 @@ def buildParser() -> argparse.ArgumentParser:
         )
     )
 
+    manager.add_argument(
+        "--pagination", metavar = "[100]", type = int, help = (
+            "Set the pagination parameter that controls how many "
+            "requests are returned for a 'GET' from the REST API "
+            "endpoints, example 'https://api.github.com/repos/...' "
+            "which is the endpoint for GitHub."
+        )
+    )
+
+    manager.add_argument(
+        "--token", type = str, help = (
+            "Authentication token (typically required for a private "
+            "or a self-hosted repository) that is additionally "
+            "required for validation. It is recommended not to use "
+            "the security token in production system and should only "
+            "be used in a testing environment. The token parameter "
+            "has a lower precedency and is over written by using an "
+            "environment variable 'POLYSKILLS_REMOTE_TOKEN' value."
+        )
+    )
+
+    # ? Create a Sub-Parser for the ``manager`` Parser
+    subskills = manager.add_subparsers(
+        dest = "library/skills", required = True, metavar = "LIBRARY"
+    )
+    skillsmanager = subskills.add_parser(
+        "skills", help = (
+            "A sub-parser endpoint to manage skills for an LLM Tool. "
+            "Typically, the function fetches an 'SKILL.md' file (if "
+            "Agents Skills [https://agentskills.io/home]) is supported "
+            "else the skill is converted to a prompt. Check the "
+            "list of supported LLM tools using 'polyskills tools' "
+            "for more details."
+        )
+    )
+
     return parser
 
 
