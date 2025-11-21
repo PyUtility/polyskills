@@ -21,6 +21,7 @@ The CLI tool is developed to manage LLM essential functions - like
 import sys
 import argparse
 
+from polyskills.apps.tools import SupportedTools
 from polyskills.remote.sources import ValidSources
 
 
@@ -40,6 +41,23 @@ def buildParser() -> argparse.ArgumentParser:
 
     subparser = parser.add_subparsers(
         dest = "command", required = True, metavar = "COMMAND"
+    )
+
+    # ? Creating Subparsers:: SOURCES - List Available Sources
+    tools = subparser.add_parser(
+        "tools", help = (
+            "List the supported tools which either accepts agents "
+            "skills (https://agentskills.io/home) file, or a converter "
+            "is available to generate prompt. For example, tools like "
+            "Claude Code is built to accept the 'SKILLS.md' or an "
+            "'AGENTS.md' file, while CodeX requires a system prompt. "
+            "The manager accepts argument to set the tool name so "
+            "that the content from the remote is safely converted. "
+            "The terminal exists after supported list display."
+        )
+    )
+    tools.set_defaults(
+        func = lambda : None # TODO
     )
 
     # ? Creating Subparsers:: SOURCES - List Available Sources
@@ -94,11 +112,16 @@ def buildParser() -> argparse.ArgumentParser:
         )
     )
 
-    # ? Create a Sub-Parser for the ``manager`` Parser
-    subskills = manager.add_subparsers(
-        dest = "library/skills", required = True, metavar = "LIBRARY"
+    # ? Create a Sub-Parser for the ``manager`` Parser for Libraries
+    # ? {``skills``, ``agents``, ...} for different actions
+    libraries = manager.add_subparsers(
+        dest = "library", required = True, metavar = "LIBRARY", help = (
+            "Mode to fetch different types of libraries (skills, "
+            "agents, etc.) for different requirements from remote."
+        )
     )
-    skillsmanager = subskills.add_parser(
+
+    skills = libraries.add_parser(
         "skills", help = (
             "A sub-parser endpoint to manage skills for an LLM Tool. "
             "Typically, the function fetches an 'SKILL.md' file (if "
@@ -106,6 +129,16 @@ def buildParser() -> argparse.ArgumentParser:
             "else the skill is converted to a prompt. Check the "
             "list of supported LLM tools using 'polyskills tools' "
             "for more details."
+        )
+    )
+
+    agents = libraries.add_parser(
+        "agents", help = (
+            "A sub-parser endpoint to manage agents for an LLM Tool. "
+            "Typically, the function fetches an 'AGENTS.md' file and "
+            "registers the agent definition with the target LLM tool. "
+            "Check the list of supported LLM tools using "
+            "'polyskills tools' for more details."
         )
     )
 
