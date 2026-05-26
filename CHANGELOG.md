@@ -52,18 +52,22 @@ under `h3` tags, while the `micro` and "version identifiers" are listed under `h
 
 ### PolySkills v1.0.0 | 2026-05-25
 
-The world of AI is evolving fast, and agent workflows, skills are the new *norms* to build awesome projects. A skill is an additional
-information that is passed to a LLM tool to do a specific task, however, it is often difficult to manage skills by maintaining a
-single source that can be address across various projects, systems, etc. In addition, a skill can have version controlling and
-updates - to address this [**`polyskills`**](https://github.com/PyUtility/polyskills) can be used.
+The world of AI is evolving fastm and agent workflows are the new *norms* to build awesome projects, or to create an entire
+army of dedicate problem solver to run an entire organization. To help a LLM to produce the correct output in a desired format
+or to do a certain tasks in a configured way an extension is necessary. The initial version aims to streamline the process of
+management of different skills. The package is now available at [**`polyskills`**](https://github.com/PyUtility/polyskills) and
+can be installed like:
 
 ```shell
-$ pip install polyskills
+$ pip install polyskills==1.0.0
 $ polyskills "https://www.github.com/<owner>/<repository>" --get-skills
 $ polyskills "https://www.github.com/<owner>/<repository>" --update <skill-name> --directory ".skills/"
 ```
 
 The module is designed without any exotic dependency - the job: (I) fetch lists of skills defined under a remote version control
 system with ``git tag skillName@vX.Y.Z` format, (II) add/update the skill in the required directory.
+
+> [!WARNING] This version (v1.0.0) of the module is now deprecated. The advanced version v2 is currently being developed. The
+> module is a complete refactor and old codes are completely removed from history. Check the PyPI tarball for file details.
 
 </div>
