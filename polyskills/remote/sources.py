@@ -21,10 +21,13 @@ fetch data using :mod:`requests` is supported.
 
 import os
 import re
+import abc
+
+import requests
 
 from enum import Enum
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 class ValidSources(Enum):
     GITHUB = "https://www.github.com/"
@@ -57,7 +60,7 @@ class SourceControl:
     token : Optional[str] = None
 
 
-class SourceManager:
+class SourceManager(abc.ABC):
     """
     A source manager, which accepts the remote source and returns all
     the default values along with data checks and other valid values.
@@ -193,3 +196,63 @@ class SourceManager:
             resolved["authorization"] = f"Bearer {token}"
 
         return resolved
+
+
+    @abc.abstractmethod
+    def getTags(
+        self, remote : str, prefix : Optional[str] = None, **kwargs
+    ) -> List[str]:
+        """
+        Get a list of tags from the remote project, with an optional
+        filter the tags based on a prefix value. The :attr:`prefix` is
+        a backward compatibility for initial version (v1.0.0) of
+        :mod:`polyskills` (https://pypi.org/project/polyskills/1.0.0/).
+        """
+
+        pass
+
+
+class GithubManager(SourceManager):
+    """
+    A concrete method to manage remote repository hosted at the
+    https://www.github.com/ to manage extensions for a LLM tool.
+    """
+
+    def __init__(self, source : ValidSources, control : SourceControl) -> None:
+        super().__init__(source = source, control = control)
+
+
+    
+    def getTags(
+        self, remote : str, prefix : Optional[str] = None, **kwargs
+    ) -> List[str]:
+        """
+        Uses the :mod:`requests` to fetch all the tags from the REST
+        API with an option to filter the tags based on a prefix.
+
+        :type  prefix: Optional[str]
+        :param prefix: A case-sensitive prefix value which filters
+            the list of tags. This is a backward compatiblity mode to
+            get tags hosted in ``skillName@vX.Y.Z`` format.
+        """
+
+        timeout = kwargs.get("timeout", 30)
+        owner, repository = self.getSlug(remote = remote)
+        remote_url = self.remoteAPI.format(
+            owner = owner, repository = repository
+        )
+
+        tags : List[str] = []
+
+        while remote_url:
+            response = requests.get(
+                remote_url, verify = False,
+                headers = self.headers, timeout = timeout
+            )
+            response.raise_for_status()
+
+            for item in response.json():
+                if prefix and item["name"].starswith(prefix):
+                    tags.append(item["name"])
+        
+        return tags
