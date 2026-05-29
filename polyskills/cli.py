@@ -34,8 +34,13 @@ def buildParser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(
         prog = "polyskills", description = (
-            "Manage portable LLM skills hosted on any source controlled "
-            "remote repository for LLM tools (like Claude Code, CodeX)."
+            "Manage portable extensions (like skills, agents, etc.) "
+            "hosted on any source controlled remote repository for "
+            "LLM tools (like Claude Code, CodeX); across different "
+            "project environments or system. The extensions are "
+            "useful in providing context that improve the output "
+            "of a LLM model. Use one of the available commands; and "
+            "to check the command documentation use '--help' flag."
         )
     )
 
