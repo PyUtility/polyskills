@@ -215,11 +215,16 @@ class SourceManager(abc.ABC):
 class GithubManager(SourceManager):
     """
     A concrete method to manage remote repository hosted at the
-    https://www.github.com/ to manage extensions for a LLM tool.
+    https://www.github.com/ that hosts extensions for LLM tools.
+
+    :type  control: SourceControl
+    :param control: Source control parameter for remote hosts
+        connection and to control the ``GET`` requests for the REST
+        API endpoints.
     """
 
-    def __init__(self, source : ValidSources, control : SourceControl) -> None:
-        super().__init__(source = source, control = control)
+    def __init__(self, control : SourceControl = SourceControl()) -> None:
+        super().__init__(source = ValidSources.GITHUB, control = control)
 
 
     
@@ -239,7 +244,8 @@ class GithubManager(SourceManager):
         timeout = kwargs.get("timeout", 30)
         owner, repository = self.getSlug(remote = remote)
         remote_url = self.remoteAPI.format(
-            owner = owner, repository = repository
+            owner = owner, repository = repository,
+            pagination = self.control.pagination
         )
 
         tags : List[str] = []
