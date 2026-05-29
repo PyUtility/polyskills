@@ -260,5 +260,7 @@ class GithubManager(SourceManager):
             for item in response.json():
                 if prefix and item["name"].starswith(prefix):
                     tags.append(item["name"])
+
+            remote_url = response.links.get("next", {}).get("url")
         
         return tags
