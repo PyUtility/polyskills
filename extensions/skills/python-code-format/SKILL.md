@@ -222,6 +222,61 @@ days = [ day for day in ... if ... ]
 days = { key : value for key, value in ... if ... }
 ```
 
+## Module Structure & Rules
+
+When working on a module, the following additional rules must be followed. A typical Python module directory structure with
+important files are as follows:
+
+```shell
+.github/
+    CODEOWNERS
+    workflows/
+        linting.yml # checks for code linting using .flake8
+        publish.yml # auto-publish package in PyPI on GitHub Release
+module/
+    __init__.py
+    submodule/
+        __init__.py
+        ...
+    ...
+    error/
+        __init__.py
+        exceptions.py
+        warnings.py
+    tests/
+        __init__.py
+        ...
+.flake8
+.gitignore
+pyproject.toml
+...
+```
+
+### Module Level Initialization File
+
+The module level initialization file (`module/__init__.py`) must follow the below snippet:
+
+```python
+# -*- encoding: utf-8 -*-
+
+"""
+<Short One-Line Summary of the Module - Use Title Case>
+=======================================================
+
+<Multi-paragraph description: what the module does, why it exists,
+how it fits in the package architecture, and any important usage
+notes. Always use proper scentence casing.>
+"""
+
+__version__ = "v1.0.0"
+
+# init-time options registrations, use api.py for public functions
+
+```
+
+Do not create default directory unless you are asked to do so. Always try to use abstract methods (group abstract class under
+`submodule/base.py` file) whenever possible such that the code can be easily extended.
+
 ## Quick Checklist Before Generating Python Code
 
   - [ ] Does the file start with a `# -*- encoding: utf-8 -*-` line and module docstring?
