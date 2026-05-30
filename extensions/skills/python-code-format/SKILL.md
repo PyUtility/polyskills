@@ -23,8 +23,9 @@ Before making any change to a `*.py` file, always use 4 spaces indentation (mand
 try to reuse already existing codes (DRY principle of coding).
 
   1. Read the **entire** target file first - understand context, imports, and existing style.
-  2. Cross-reference @reference/style.md for the complete style rules.
-  3. Apply every rule before generating output. Read the entire skill file.
+  2. Always follow PEP standard to write production grade codes.
+  3. Always check if .flake8 file is present and follow the linting standard.
+  4. Apply every rule before generating output. Read the entire skill file.
 
 Never skip reading the skill or reference even for small changes.
 
@@ -211,6 +212,16 @@ refactoring or there is a major change (ignore for small changes).
 
 Never add comments explaining obvious code. Only comment where intent is non-obvious, or does not follow standard approach.
 
+### Comprehension Patterns
+
+Simple `list`, `dict` comprehension can be kept inline but can span multiple lines when short and easily understood. Example
+for comprehension is as below.
+
+```python
+days = [ day for day in ... if ... ]
+days = { key : value for key, value in ... if ... }
+```
+
 ## Quick Checklist Before Generating Python Code
 
   - [ ] Does the file start with a `# -*- encoding: utf-8 -*-` line and module docstring?
@@ -221,5 +232,7 @@ Never add comments explaining obvious code. Only comment where intent is non-obv
   - [ ] Are private methods prefixed with double underscores `__method__`?
   - [ ] Is indentation consistently 4 spaces?
   - [ ] Are lines within the 88-character limit?
+  - [ ] Is PEP production style with DRY principle followed in writing code?
+  - [ ] Check for .flake8 raise error if file is present in the root of the project.
 
 </div>
