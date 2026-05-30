@@ -3,7 +3,7 @@
 # AI Skills Extensions
 
 [![Python Code Format](https://img.shields.io/badge/Python-%20Code%20Format-003B57?style=plastic&logo=python)](python-code-format/SKILL.md)
-
+[![SQL Code Format](https://img.shields.io/badge/SQL-%20Code%20Format-003B57?style=plastic&logo=postgresql)](sql-code-format/SKILL.md)
 
 </div>
 
