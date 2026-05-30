@@ -63,9 +63,9 @@ to organize code:
 
 | Directory Name | Usage and Details |
 | :---: | --- |
-| database/schema/<schema>/<filename>.sql | Use this to place create table statements, file name should be the table name or broad category name. |
-| database/schema/<schema>/views/<viewname>.sql | Use this directory to keep standard views. |
-| database/schema/<schema>/functions/<functioname>.sql | Use this directory to keep functions. |
+| `database/schema/<schema>/<filename>.sql` | Use this to place create table statements, file name should be the table name or broad category name. |
+| `database/schema/<schema>/views/<viewname>.sql` | Use this directory to keep standard views. |
+| `database/schema/<schema>/functions/<functioname>.sql` | Use this directory to keep functions. |
 
 Always prefix objects with its schema name, example `CREATE TABLE <schema>.<tablename>` or `CREATE FUNCTION <schema>.<functionname>`
 when creating objects.
