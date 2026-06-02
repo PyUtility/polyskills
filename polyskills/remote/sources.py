@@ -81,6 +81,7 @@ class SourceManager(abc.ABC):
 
 
     @property
+    @abc.abstractmethod
     def remotePattern(self) -> re.Pattern:
         """
         Returns the cached compiled regex for the active source. Used
@@ -88,14 +89,7 @@ class SourceManager(abc.ABC):
         (to extract ``owner``/``repository`` named groups).
         """
 
-        defaults = {
-            ValidSources.GITHUB : re.compile(
-                r"^(?:https?://)?(?:www\.)?github\.com/"
-                r"(?P<owner>[^/]+)/(?P<repository>[^/]+?)(?:\.git)?/?$"
-            )
-        }
-
-        return defaults[self.source]
+        pass
 
 
     def getSlug(self, remote : str) -> Tuple[str, str]:
@@ -137,6 +131,7 @@ class SourceManager(abc.ABC):
 
 
     @property
+    @abc.abstractmethod
     def remoteAPI(self) -> str:
         """
         Return the REST API endpoint formatted with slug values (and
@@ -145,57 +140,18 @@ class SourceManager(abc.ABC):
         method.
         """
 
-        defaults = {
-            ValidSources.GITHUB : (
-                "https://api.github.com/repos/"
-                "{owner}/{repository}/tags?per_page={pagination}"
-            )
-        }
-
-        return defaults[self.source]
+        pass
 
 
     @property
+    @abc.abstractmethod
     def headers(self) -> Dict[str, str]:
         """
         Returns the valid list of headers which are required by the
-        REST API of the version control source. If a source-specific
-        authentication token is required (e.g., ``GITHUB_TOKEN``) then
-        it can be passed from environment variable (highest priority),
-        or can be set from :attr:`SourceControl.token` parameter.
-        Passing a value directly from command line is discouraged.
-
-        :NOTE: The :mod:`requests` strips the ``authorization`` header
-        on cross-host redirect, so it is safe to forward the token to
-        the tarball endpoint as well - GitHub redirects archive
-        downloads to S3 and the token does not follow.
-
-        :NOTE: Authorization token can be passed to the module either
-        by providing the value from environment variable (please set
-        ``POLYSKILLS_REMOTE_TOKEN``) which has the highest priority,
-        or by setting the value to :attr:`SourceControl.token` which
-        is also available as ``--token`` parameter from CLI (the
-        later is discouraged). If both the value is provided then the
-        environment value is prioritized without an error.
+        REST API of the version control source.
         """
 
-        defaults = {
-            ValidSources.GITHUB : {
-                "accept" : "application/vnd.github+json",
-                "X-GitHub-Api-Version" : "2022-11-28",
-            }
-        }
-
-        resolved = defaults[self.source]
-
-        token = os.environ.get(
-            "POLYSKILLS_REMOTE_TOKEN", self.control.token
-        )
-
-        if token:
-            resolved["authorization"] = f"Bearer {token}"
-
-        return resolved
+        pass
 
 
     @abc.abstractmethod
@@ -212,6 +168,25 @@ class SourceManager(abc.ABC):
         pass
 
 
+    @property
+    def _token(self) -> Optional[str]:
+        """
+        Get the authorization token (if any) for the remote URI, which
+        is typically required for private repository.
+
+        :NOTE: Authorization token can be passed to the module either
+        by providing the value from environment variable (please set
+        ``POLYSKILLS_REMOTE_TOKEN``) which has the highest priority,
+        or by setting the value to :attr:`SourceControl.token` which
+        is also available as ``--token`` parameter from CLI (the
+        later is discouraged). If both the value is provided then the
+        environment value is prioritized without an error.
+        """
+
+        return os.environ.get(
+            "POLYSKILLS_REMOTE_TOKEN", self.control.token
+        )
+
 class GithubManager(SourceManager):
     """
     A concrete method to manage remote repository hosted at the
@@ -227,7 +202,63 @@ class GithubManager(SourceManager):
         super().__init__(source = ValidSources.GITHUB, control = control)
 
 
-    
+    @property
+    def remotePattern(self) -> re.Pattern:
+        """
+        Returns the cached compiled regex for the active source. Used
+        by ``detectSource()`` (to recognise a URL) and ``getSlug()``
+        (to extract ``owner``/``repository`` named groups). This is
+        an explicit pattern for https://github.com/{owner}/{repository}
+        with a defined slug groups to build remote.
+        """
+
+        return re.compile(
+            r"^(?:https?://)?(?:www\.)?github\.com/"
+            r"(?P<owner>[^/]+)/(?P<repository>[^/]+?)(?:\.git)?/?$"
+        )
+
+
+    @property
+    def remoteAPI(self) -> str:
+        """
+        Returns the REST API endpoint for GitHub hosted repositories,
+        check https://docs.github.com/en/rest for more details.
+
+        :rtype:   str
+        :returns: REST API endpoint for GitHub hosted repository with
+            positional format options for ``owner``, ``repository``,
+            and ``pagination`` control.
+        """
+
+        return (
+            "https://api.github.com/repos/"
+            "{owner}/{repository}/tags?per_page={pagination}"
+        )
+
+
+    @property
+    def headers(self) -> Dict[str, str]:
+        """
+        Returns the valid list of headers which are required by the
+        GitHub REST API endpoints.
+
+        :NOTE: The :mod:`requests` strips the ``authorization`` header
+        on cross-host redirect, so it is safe to forward the token to
+        the tarball endpoint as well - GitHub redirects archive
+        downloads to S3 and the token does not follow.
+        """
+
+        headers = {
+            "accept" : "application/vnd.github+json",
+            "X-GitHub-Api-Version" : "2022-11-28",
+        }
+
+        if self._token:
+            headers["authorization"] = f"Bearer {self._token}"
+
+        return headers
+
+
     def getTags(
         self, remote : str, prefix : Optional[str] = None, **kwargs
     ) -> List[str]:
@@ -259,6 +290,8 @@ class GithubManager(SourceManager):
 
             for item in response.json():
                 if prefix and item["name"].starswith(prefix):
+                    tags.append(item["name"])
+                else:
                     tags.append(item["name"])
 
             remote_url = response.links.get("next", {}).get("url")
