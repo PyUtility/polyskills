@@ -21,6 +21,8 @@ The CLI tool is developed to manage LLM essential functions - like
 import sys
 import argparse
 
+from pathlib import Path
+
 from polyskills.apps.tools import SupportedTools
 from polyskills.remote.sources import ValidSources
 
@@ -97,7 +99,8 @@ def buildParser() -> argparse.ArgumentParser:
     )
 
     manager.add_argument(
-        "--pagination", metavar = "[100]", type = int, help = (
+        "--pagination", metavar = "[100]", type = int,
+        default = 100, help = (
             "Set the pagination parameter that controls how many "
             "requests are returned for a 'GET' from the REST API "
             "endpoints, example 'https://api.github.com/repos/...' "
@@ -114,6 +117,28 @@ def buildParser() -> argparse.ArgumentParser:
             "be used in a testing environment. The token parameter "
             "has a lower precedency and is over written by using an "
             "environment variable 'POLYSKILLS_REMOTE_TOKEN' value."
+        )
+    )
+
+    # ? directory control for the manager/library
+    manager.add_argument(
+        "-s", "--source", type = str, default = None,
+        metavar = "", help = (
+            "Source directory for the remote from which the extension "
+            "is fetched, defaults to ./skills for `--library skills` "
+            "mode or ./agents for `--library agents` mode, etc. as "
+            "per the Agents Skills [https://agentskills.io/home] "
+            "standards."
+        )
+    )
+
+    manager.add_argument(
+        "-d", "--destination", type = str, default = None,
+        metavar = "", help = (
+            "Destination directory into which the extension is to be "
+            "placed, this defaults to the local directory into their "
+            "respective directories like ./skills, ./agents, etc. "
+            "as per the standards."
         )
     )
 
@@ -160,6 +185,11 @@ def main() -> None:
 
     if hasattr(args, "func") and callable(args.func):
         print(args.func())
+
+
+    # ? set default source, destination directory based on library
+    args.source = Path(args.source or f"./{args.library}").as_posix()
+    args.destination = Path(args.destination or f"./{args.library}")
 
     return None
 

@@ -155,7 +155,7 @@ class SourceManager(abc.ABC):
 
 
     @abc.abstractmethod
-    def getTags(
+    def get(
         self, remote : str, prefix : Optional[str] = None, **kwargs
     ) -> List[str]:
         """
@@ -186,6 +186,7 @@ class SourceManager(abc.ABC):
         return os.environ.get(
             "POLYSKILLS_REMOTE_TOKEN", self.control.token
         )
+
 
 class GithubManager(SourceManager):
     """
@@ -259,7 +260,7 @@ class GithubManager(SourceManager):
         return headers
 
 
-    def getTags(
+    def get(
         self, remote : str, prefix : Optional[str] = None, **kwargs
     ) -> List[str]:
         """
