@@ -34,12 +34,16 @@ logging.basicConfig(
 )
 
 # ? live-repository coordinates shared by every concrete test case
-REMOTE     : str      = "https://github.com/PyUtility/polyskills"
-NAME       : str      = "sql-code-format"
-LIBRARY    : Path     = Path("extensions/skills")
-VERSION    : str      = "master"
-EXPECTED   : Set[str] = {"SKILL.md"} # minimum file expected after extract
-PAGINATION : int      = 100
+REMOTE         : str      = "https://github.com/PyUtility/polyskills"
+NAME           : str      = "sql-code-format"
+LIBRARY        : Path     = Path("extensions/skills")
+VERSION        : str      = "master"
+EXPECTED       : Set[str] = {"SKILL.md"} # minimum file expected after extract
+PAGINATION     : int      = 100
+
+# ? canonical user-level skill installation root (platform-agnostic via Path.home())
+USER_SKILL_ROOT  : Path   = Path.home() / ".claude" / "skills"
+SKILL_FILENAME   : str    = "SKILL.md"
 
 
 class GithubManagerTestCase(unittest.TestCase):
@@ -92,3 +96,25 @@ class GithubManagerTestCase(unittest.TestCase):
         """
 
         shutil.rmtree(self.staging, ignore_errors = True)
+
+
+    def _extract(self) -> None:
+        """
+        Shared helper that performs a vanilla extension extraction into
+        ``self.destination`` with the default ``exists='fail'`` policy
+        so individual tests do not duplicate the dispatch boilerplate.
+
+        The method asserts that the dispatcher returns ``None`` (its
+        documented contract) so callers only need to assert post-state.
+        """
+
+        result = self.manager.get(
+            REMOTE, mode = "extensions",
+            name = NAME, library = "skills",
+            source = LIBRARY, destination = self.destination,
+            version = VERSION
+        )
+        self.assertIsNone(
+            result,
+            f"Expected None from extensions dispatch, got {result!r}"
+        )
