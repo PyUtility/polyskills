@@ -72,26 +72,6 @@ class TestGithubManagerExtensions(GithubManagerTestCase):
     semantics.
     """
 
-    def _extract(self) -> None:
-        """
-        Helper that performs a vanilla extension extraction into
-        ``self.destination`` with the default ``exists='fail'``
-        policy so individual tests do not duplicate the dispatch
-        boilerplate.
-        """
-
-        result = self.manager.get(
-            REMOTE, mode = "extensions",
-            name = NAME, library = "skills",
-            source = LIBRARY, destination = self.destination,
-            version = VERSION
-        )
-        self.assertIsNone(
-            result,
-            f"Expected None from extensions dispatch, got {result!r}"
-        )
-
-
     def test_extracts_expected_files_into_destination(self) -> None:
         """
         After a successful dispatch the destination must contain at
