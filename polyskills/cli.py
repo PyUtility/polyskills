@@ -22,9 +22,19 @@ import sys
 import argparse
 
 from pathlib import Path
+from typing import Callable, Optional
 
 from polyskills.apps.tools import SupportedTools
-from polyskills.remote.sources import ValidSources
+from polyskills.remote.sources import (
+    GithubManager, SourceControl, SourceManager, ValidSources
+)
+
+# ? registry mapping each supported remote enumeration to its concrete
+# ? :class:`SourceManager` factory; extending the framework with a new
+# ? remote provider only requires registering the pair below.
+_SOURCE_MANAGERS = {
+    ValidSources.GITHUB : GithubManager,
+}
 
 
 def buildParser() -> argparse.ArgumentParser:
@@ -121,6 +131,36 @@ def buildParser() -> argparse.ArgumentParser:
     )
 
     # ? directory control for the manager/library
+    # ? extension selectors shared across every library sub-command
+    manager.add_argument(
+        "-n", "--name", type = str, required = True, metavar = "", help = (
+            "Name of the extension to fetch from the remote source, "
+            "e.g., 'sql-code-format'. The value is the leaf directory "
+            "name on the remote under the resolved source directory "
+            "(see '--source')."
+        )
+    )
+
+    manager.add_argument(
+        "--version", type = str, default = "master", metavar = "[master]",
+        help = (
+            "Exact version (a tag or a commit SHA) of the extension to "
+            "fetch, defaults to 'master' which resolves to the latest "
+            "content on the default branch of the remote repository."
+        )
+    )
+
+    manager.add_argument(
+        "--exists", type = str, default = "fail",
+        choices = ("fail", "overwrite", "merge"), help = (
+            "Behavior when the destination directory already exists "
+            "and is non-empty. 'fail' raises an error, 'overwrite' "
+            "removes and recreates the destination, and 'merge' "
+            "extracts on top of the existing tree (overwrites on "
+            "conflict). Defaults to 'fail'."
+        )
+    )
+
     manager.add_argument(
         "-s", "--source", type = str, default = None,
         metavar = "", help = (
@@ -175,6 +215,64 @@ def buildParser() -> argparse.ArgumentParser:
     return parser
 
 
+def _resolveManager(
+    remote : str, control : SourceControl
+) -> SourceManager:
+    """
+    Detect which :class:`ValidSources` provider hosts ``remote`` and
+    return a configured concrete :class:`SourceManager` instance.
+
+    The detection uses each registered manager's ``remotePattern`` so
+    new providers light up automatically once they are added to the
+    :data:`_SOURCE_MANAGERS` registry above.
+
+    :raises ValueError: If ``remote`` does not match any of the
+        registered remote URL patterns.
+    """
+
+    for source, factory in _SOURCE_MANAGERS.items():
+        candidate = factory(control = control)
+        if candidate.remotePattern.match(remote):
+            return candidate
+
+    supported = ", ".join(member.value for member in _SOURCE_MANAGERS)
+    raise ValueError(
+        f"Remote `{remote}` is not supported. "
+        f"Supported sources: {supported}"
+    )
+
+
+def get(
+    remote : str, name : str, source : Path, destination : Path,
+    version : str = "master",
+    formatter : Optional[Callable] = lambda : None,
+    exists : str = "fail",
+    control : Optional[SourceControl] = None
+) -> None:
+    """
+    Thin CLI-side wrapper around :meth:`SourceManager.get` that fetches
+    a single extension (``skills`` or ``agents``) from ``remote`` and
+    flushes the content into ``destination``. The signature mirrors
+    the concrete :meth:`SourceManager._getExtensions` so the CLI does
+    not introduce a divergent contract.
+
+    :type  control: Optional[SourceControl]
+    :param control: Optional :class:`SourceControl` instance; when
+        omitted a default-constructed instance is used. The CLI's
+        ``main()`` builds this from ``--pagination`` / ``--token``.
+    """
+
+    manager = _resolveManager(
+        remote = remote, control = control or SourceControl()
+    )
+
+    return manager.get(
+        remote = remote, mode = "extensions",
+        name = name, source = source, destination = destination,
+        version = version, formatter = formatter, exists = exists,
+    )
+
+
 def main() -> None:
     """
     Entry point for CLI tool for :mod:`polyskills` that parses the
@@ -183,13 +281,31 @@ def main() -> None:
 
     args = buildParser().parse_args()
 
+    # ? terminal commands: 'sources', 'tools' - print and exit early
+    # ? these subparsers attach a ``func`` default; manager does not.
     if hasattr(args, "func") and callable(args.func):
-        print(args.func())
-
+        output = args.func()
+        if output is not None:
+            print(output)
+        return None
 
     # ? set default source, destination directory based on library
     args.source = Path(args.source or f"./{args.library}").as_posix()
-    args.destination = Path(args.destination or f"./{args.library}")
+    args.destination = Path(
+        args.destination or f"./{args.library}/{args.name}"
+    )
+
+    # ? dispatch to the concrete remote manager via the wrapper above
+    control = SourceControl(
+        pagination = args.pagination, token = args.token
+    )
+
+    get(
+        remote = args.remote, name = args.name,
+        source = Path(args.source), destination = args.destination,
+        version = args.version, exists = args.exists,
+        control = control,
+    )
 
     return None
 
