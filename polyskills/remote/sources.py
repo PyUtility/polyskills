@@ -217,27 +217,42 @@ class SourceManager(abc.ABC):
 
         prefix : Optional[str] = kwargs.get("prefix", None)
 
+        # positional arguments to fetch extensions from remote
         name : Optional[str] = kwargs.get("name", None)
-        source : Optional[str] = kwargs.get(
-            "source", Path("./skills").as_posix()
-        )
-        destination : Optional[str] = kwargs.get(
-            "destination", Path(f"./skills/{name}")
-        )
-        version : Optional[str] = kwargs.get("version", "master")
+        library : Optional[str] = kwargs.get("library", "skills")
 
-        _m = ["tags", "skills", "agents"] # supported modes
-        assert mode.lower() in _m, "Invalid mode, supported: {_m}"
+        # generate the source, destination directory defaults
+        source : Optional[Path] = kwargs.get(
+            "source", Path(f"./{library}").as_posix()
+        )
+        destination : Optional[Path] = kwargs.get(
+            "destination", Path(f"./{library}/{name}")
+        )
+
+        # todo: optional keyword argument to refine further control
+        version : Optional[str] = kwargs.get("version", "master")
+        formatter : Optional[Callable] = kwargs.get(
+            "formatter", lambda : None
+        )
+
+        # list of supported modes; keyword arguments control
+        # always use lower case naming for modes; in-built control
+        mode = mode.lower()
+        supported = ["tags", "skills", "agents"]
+        assert mode in supported, \
+            f"Mode = `{mode}` is not in {supported}"
 
         # ! validate that positional required arguments are available
         assert name is not None and mode == "extensions", \
             "Extension name cannot be null."
+        
+        assert library is not None and mode == "extensions", \
+            f"Library cannot be null, supported are {supported[1:]}"
 
         methods = dict(
             tags = self._getTags(remote, prefix = prefix),
             extensions = self._getExtensions(
-                remote, name, source = source, destination = destination,
-                version = version, formatter = lambda : None
+                remote, name, source, destination, version, formatter # type: ignore
             )
         )
 
@@ -258,8 +273,8 @@ class SourceManager(abc.ABC):
 
     @abc.abstractmethod
     def _getExtensions(
-        self, remote : str, name : str, source : Optional[str],
-        destination : Optional[str], version : Optional[str],
+        self, remote : str, name : str, source : Path,
+        destination : Path, version : str = "master",
         formatter : Optional[Callable] = lambda : None
     ) -> None:
         """
@@ -405,9 +420,9 @@ class GithubManager(SourceManager):
 
 
     def _getExtensions(
-        self, remote: str, name : str, source: Optional[str],
-        destination: Optional[str], version : Optional[str],
-        formatter: Optional[Callable] = lambda : None
+        self, remote : str, name : str, source : Path,
+        destination : Path, version : str = "master",
+        formatter : Optional[Callable] = lambda : None
     ) -> None:
         """
         Flush the content of the extensions from the source directory
@@ -425,5 +440,3 @@ class GithubManager(SourceManager):
         # while flushing the data to destination directory. This would
         # let shutil.move degrade to copy+delte when /tmp is on a
         # different mount, breaking the all-or-nothing promise
-        
-        return None
