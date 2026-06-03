@@ -22,6 +22,8 @@ fetch data using :mod:`requests` is supported.
 import os
 import re
 import abc
+import shutil
+import tarfile
 
 import tempfile
 import requests
@@ -234,29 +236,32 @@ class SourceManager(abc.ABC):
         formatter : Optional[Callable] = kwargs.get(
             "formatter", lambda : None
         )
+        exists : str = kwargs.get("exists", "fail")
 
         # list of supported modes; keyword arguments control
         # always use lower case naming for modes; in-built control
         mode = mode.lower()
-        supported = ["tags", "skills", "agents"]
+        supported = ["tags", "extensions"]
         assert mode in supported, \
             f"Mode = `{mode}` is not in {supported}"
 
         # ! validate that positional required arguments are available
-        assert name is not None and mode == "extensions", \
-            "Extension name cannot be null."
-        
-        assert library is not None and mode == "extensions", \
-            f"Library cannot be null, supported are {supported[1:]}"
+        # only enforced for the ``extensions`` mode where they are used
+        if mode == "extensions":
+            assert name is not None, "Extension name cannot be null."
+            assert library is not None, \
+                f"Library cannot be null, supported are {supported}"
 
-        methods = dict(
-            tags = self._getTags(remote, prefix = prefix),
-            extensions = self._getExtensions(
-                remote, name, source, destination, version, formatter # type: ignore
+        # lazy dispatch: only the requested branch is invoked
+        methods : Dict[str, Callable[[], Any]] = dict(
+            tags = lambda : self._getTags(remote, prefix = prefix),
+            extensions = lambda : self._getExtensions(
+                remote, name, source, destination, # type: ignore[arg-type]
+                version, formatter, exists # type: ignore[arg-type]
             )
         )
 
-        return methods[mode] # return the underlying assets
+        return methods[mode]() # return the underlying assets
 
 
     @abc.abstractmethod
@@ -409,10 +414,9 @@ class GithubManager(SourceManager):
             response.raise_for_status()
 
             for item in response.json():
-                if prefix and item["name"].starswith(prefix):
-                    tags.append(item["name"])
-                else:
-                    tags.append(item["name"])
+                if prefix and not item["name"].startswith(prefix):
+                    continue
+                tags.append(item["name"])
 
             remote_url = response.links.get("next", {}).get("url")
         
@@ -422,12 +426,24 @@ class GithubManager(SourceManager):
     def _getExtensions(
         self, remote : str, name : str, source : Path,
         destination : Path, version : str = "master",
-        formatter : Optional[Callable] = lambda : None
+        formatter : Optional[Callable] = lambda : None,
+        exists : str = "fail"
     ) -> None:
         """
         Flush the content of the extensions from the source directory
-        to the destination directory.
+        of the remote tarball archive into the destination directory.
+
+        :type  exists: str
+        :param exists: Behavior when ``destination`` already exists
+            and is non-empty. One of ``fail`` (raises
+            :class:`FileExistsError`), ``overwrite`` (removes and
+            recreates ``destination``), or ``merge`` (extracts on top
+            of the existing tree, overwriting on conflict). Defaults
+            to ``fail``.
         """
+
+        assert exists in ("fail", "overwrite", "merge"), \
+            f"exists = `{exists}` not in ['fail', 'overwrite', 'merge']"
 
         owner, repository = self.getSlug(remote = remote)
         uri = (
@@ -435,8 +451,80 @@ class GithubManager(SourceManager):
             "{owner}/{repository}/tarball/{tag}"
         ).format(owner = owner, repository = repository, tag = version)
 
-        # co-locate the staging directory with the target, so the
-        # final swap-in and atomic same file system rename can be done
-        # while flushing the data to destination directory. This would
-        # let shutil.move degrade to copy+delte when /tmp is on a
-        # different mount, breaking the all-or-nothing promise
+        destination = Path(destination)
+        if destination.exists() and destination.is_dir() \
+                and any(destination.iterdir()):
+            if exists == "fail":
+                raise FileExistsError(
+                    f"Destination `{destination}` exists and is not empty."
+                )
+            elif exists == "overwrite":
+                shutil.rmtree(destination)
+
+        destination.mkdir(parents = True, exist_ok = True)
+
+        # path of the extension as it appears inside the archive,
+        # underneath the auto-generated <owner>-<repo>-<sha> prefix
+        sub = Path(str(source)).as_posix().lstrip("./").strip("/")
+        target = f"{sub}/{name}".strip("/") if sub else name
+
+        with tempfile.NamedTemporaryFile(
+            suffix = ".tar.gz", delete = False
+        ) as handle:
+            archive_path = Path(handle.name)
+
+            try:
+                with requests.get(
+                    uri, headers = self.headers, stream = True,
+                    verify = False, timeout = 60, allow_redirects = True
+                ) as response:
+                    response.raise_for_status()
+                    for chunk in response.iter_content(chunk_size = 1 << 14):
+                        if chunk:
+                            handle.write(chunk)
+                handle.flush()
+                handle.close()
+
+                with tarfile.open(archive_path, mode = "r:gz") as archive:
+                    members = archive.getmembers()
+                    if not members:
+                        raise FileNotFoundError(
+                            f"Empty archive for {remote}@{version}"
+                        )
+
+                    root = members[0].name.split("/", 1)[0]
+                    prefix = f"{root}/{target}/"
+
+                    found = False
+                    for member in members:
+                        if not member.name.startswith(prefix):
+                            continue
+                        found = True
+                        relative = member.name[len(prefix):]
+                        if not relative:
+                            continue
+
+                        out_path = destination / relative
+                        if member.isdir():
+                            out_path.mkdir(parents = True, exist_ok = True)
+                        elif member.isfile():
+                            out_path.parent.mkdir(
+                                parents = True, exist_ok = True
+                            )
+                            extracted = archive.extractfile(member)
+                            if extracted is None:
+                                continue
+                            with extracted as src_fp, \
+                                    open(out_path, "wb") as dst_fp:
+                                shutil.copyfileobj(src_fp, dst_fp)
+
+                    if not found:
+                        raise FileNotFoundError(
+                            f"Extension `{name}` not found at "
+                            f"`{target}` in {remote}@{version}"
+                        )
+            finally:
+                try:
+                    archive_path.unlink()
+                except OSError:
+                    pass
