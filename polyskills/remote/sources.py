@@ -23,11 +23,13 @@ import os
 import re
 import abc
 
+import tempfile
 import requests
 
 from enum import Enum
+from pathlib import Path
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 class ValidSources(Enum):
     GITHUB = "https://www.github.com/"
@@ -154,15 +156,117 @@ class SourceManager(abc.ABC):
         pass
 
 
+    def get(self, remote : str, mode : str = "tags", **kwargs) -> Any:
+        """
+        Get is a concrete method that fetches data from the remote
+        source to fetch underlying extensions (skills, agents, etc.)
+        and also get other informations like ``tags``, ``commits``,
+        which can be used to get the exact version of the extensions
+        from the remote source.
+
+        :type  remote: str
+        :param remote: Remote URI where the code is hosted. Based on
+            the data source, the REST API endpoints are internally
+            generated (if exists) or method is exposed.
+
+        :type  mode: str
+        :param mode: Typical endpoint based on which the data is to
+            be fetched from the remote source, defaults to ``tags``
+            which fetches the ``git tag`` from the system.
+
+        **Keyword Arguments**
+
+        The keyword arguments are defined based on the requirement of
+        the ``mode`` attribute. Each mode has a particular set of
+        optional control requirements as below.
+
+            * MODE: ``tags`` - Fetches the tags from the remote
+                repository. This is particularly useful to fetch the
+                extensions for a particular version. Accepted keyword
+                arguments are:
+
+                - **prefix** (*str*) - This is created to
+                    provide a backward compatibility for the initial
+                    version (https://pypi.org/project/polyskills/1.0.0/)
+                    of the module. Defaults to ``None`` which returns
+                    everything.
+
+            * MODE: ``extensions`` - Method to get the extension from
+                the remote repository. An extension for LLM tool can
+                be ``skills``, ``agents``, etc. which are available.
+
+                - **name** (*str*) - Name of the extension, this is
+                    a required value, raises assertion error if None.
+
+                - **source** (*str*) - Directory from where the
+                    extension is available. The default value is the
+                    `./skills` directory, and should be controlled
+                    by the managers.
+
+                - **destination** (*str*) - Destination directory to
+                    flush the extension content, defaults to local.
+
+                - **version** (*str*) - Specify the exact version (tags,
+                    commit hash) to fetch the extension details. This
+                    defaults to ``master`` that is the latest content
+                    from the repository. (TODO)
+
+                - **formatter** (*Callable*) - Formatter method based
+                    on the final LLM tool. (TODO)
+        """
+
+        prefix : Optional[str] = kwargs.get("prefix", None)
+
+        name : Optional[str] = kwargs.get("name", None)
+        source : Optional[str] = kwargs.get(
+            "source", Path("./skills").as_posix()
+        )
+        destination : Optional[str] = kwargs.get(
+            "destination", Path(f"./skills/{name}")
+        )
+        version : Optional[str] = kwargs.get("version", "master")
+
+        _m = ["tags", "skills", "agents"] # supported modes
+        assert mode.lower() in _m, "Invalid mode, supported: {_m}"
+
+        # ! validate that positional required arguments are available
+        assert name is not None and mode == "extensions", \
+            "Extension name cannot be null."
+
+        methods = dict(
+            tags = self._getTags(remote, prefix = prefix),
+            extensions = self._getExtensions(
+                remote, name, source = source, destination = destination,
+                version = version, formatter = lambda : None
+            )
+        )
+
+        return methods[mode] # return the underlying assets
+
+
     @abc.abstractmethod
-    def get(
-        self, remote : str, prefix : Optional[str] = None, **kwargs
+    def _getTags(
+        self, remote : str, prefix : Optional[str] = None
     ) -> List[str]:
         """
-        Get a list of tags from the remote project, with an optional
-        filter the tags based on a prefix value. The :attr:`prefix` is
-        a backward compatibility for initial version (v1.0.0) of
-        :mod:`polyskills` (https://pypi.org/project/polyskills/1.0.0/).
+        Get the valid list of tags with an optional compatibility for
+        the https://pypi.org/project/polyskills/1.0.0/ release.
+        """
+
+        pass
+
+
+    @abc.abstractmethod
+    def _getExtensions(
+        self, remote : str, name : str, source : Optional[str],
+        destination : Optional[str], version : Optional[str],
+        formatter : Optional[Callable] = lambda : None
+    ) -> None:
+        """
+        Get the underlying assets from the "source" directory and
+        flush the content to the "destination" directory. In addition,
+        if any additional parsing is required by the LLM tool then
+        the content should be processed accordingly.
         """
 
         pass
@@ -260,7 +364,7 @@ class GithubManager(SourceManager):
         return headers
 
 
-    def get(
+    def _getTags(
         self, remote : str, prefix : Optional[str] = None, **kwargs
     ) -> List[str]:
         """
@@ -298,3 +402,28 @@ class GithubManager(SourceManager):
             remote_url = response.links.get("next", {}).get("url")
         
         return tags
+
+
+    def _getExtensions(
+        self, remote: str, name : str, source: Optional[str],
+        destination: Optional[str], version : Optional[str],
+        formatter: Optional[Callable] = lambda : None
+    ) -> None:
+        """
+        Flush the content of the extensions from the source directory
+        to the destination directory.
+        """
+
+        owner, repository = self.getSlug(remote = remote)
+        uri = (
+            "https://api.github.com/repos/"
+            "{owner}/{repository}/tarball/{tag}"
+        ).format(owner = owner, repository = repository, tag = version)
+
+        # co-locate the staging directory with the target, so the
+        # final swap-in and atomic same file system rename can be done
+        # while flushing the data to destination directory. This would
+        # let shutil.move degrade to copy+delte when /tmp is on a
+        # different mount, breaking the all-or-nothing promise
+        
+        return None
