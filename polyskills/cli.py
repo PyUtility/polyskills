@@ -90,6 +90,69 @@ def buildParser() -> argparse.ArgumentParser:
         ])
     )
 
+    # ? Creating Subparsers:: LIST - Enumerate Library Contents
+    listing = subparser.add_parser(
+        "list", help = (
+            "List the available extensions (skills, agents, etc.) "
+            "hosted under the source directory of a remote repository "
+            "without downloading any content. Useful to discover the "
+            "valid '--name' values for the 'manager' command."
+        )
+    )
+
+    listing.add_argument(
+        "remote", help = (
+            "Remote URL for the Skills Repository, e.g., "
+            "https://github.com/<owner>/<repository>. Check the list "
+            "of supported remote sources using 'polyskills sources'."
+        )
+    )
+
+    listing.add_argument(
+        "--pagination", metavar = "[100]", type = int, default = 100,
+        help = (
+            "Pagination parameter forwarded to the underlying REST "
+            "API client. Defaults to 100."
+        )
+    )
+
+    listing.add_argument(
+        "--token", type = str, help = (
+            "Authentication token for private/self-hosted remotes. "
+            "Overridden by the 'POLYSKILLS_REMOTE_TOKEN' environment "
+            "variable when set."
+        )
+    )
+
+    listing.add_argument(
+        "--version", type = str, default = "master", metavar = "[master]",
+        help = (
+            "Exact version (a tag or a commit SHA) at which to list "
+            "the extensions, defaults to 'master'."
+        )
+    )
+
+    listing.add_argument(
+        "-s", "--source", type = str, default = None, metavar = "",
+        help = (
+            "Source directory to enumerate, defaults to './skills' "
+            "for the 'skills' library, './agents' for 'agents', etc."
+        )
+    )
+
+    listing_libraries = listing.add_subparsers(
+        dest = "library", required = True, metavar = "LIBRARY", help = (
+            "Library type to enumerate (skills, agents, etc.)."
+        )
+    )
+
+    listing_libraries.add_parser(
+        "skills", help = "List the available skills on the remote."
+    )
+    listing_libraries.add_parser(
+        "agents", help = "List the available agents on the remote."
+    )
+
     # ? Creating Subparsers:: MANAGE - Manage Remote Library
     manager = subparser.add_parser(
         "manager", help = (
@@ -273,6 +336,28 @@ def get(
     )
 
 
+def listExtensions(
+    remote : str, library : str, source : Path, version : str = "master",
+    control : Optional[SourceControl] = None
+) -> list:
+    """
+    Thin CLI-side wrapper around :meth:`SourceManager.get` (mode set
+    to ``list``) that enumerates the immediate child directories of
+    ``source`` on the remote at ``version``. Each child directory is
+    one extension (skill, agent, etc.) and the returned list is the
+    valid universe of ``--name`` values for the ``manager`` command.
+    """
+
+    manager = _resolveManager(
+        remote = remote, control = control or SourceControl()
+    )
+
+    return manager.get(
+        remote = remote, mode = "list",
+        library = library, source = source, version = version,
+    )
+
+
 def main() -> None:
     """
     Entry point for CLI tool for :mod:`polyskills` that parses the
@@ -287,6 +372,33 @@ def main() -> None:
         output = args.func()
         if output is not None:
             print(output)
+        return None
+
+    # ? dispatch the 'list' subcommand: enumerate extensions and exit
+    if args.command == "list":
+        source = Path(args.source or f"./{args.library}").as_posix()
+        control = SourceControl(
+            pagination = args.pagination, token = args.token
+        )
+
+        names = listExtensions(
+            remote = args.remote, library = args.library,
+            source = Path(source), version = args.version,
+            control = control,
+        )
+
+        header = (
+            f"Available {args.library} at "
+            f"`{source}` (version = {args.version}):"
+        )
+        if not names:
+            print(header)
+            print("\t<no extensions found>")
+            return None
+
+        print(header)
+        for idx, name in enumerate(names):
+            print(f"\t>> {str(idx + 1).zfill(2)}. {name}")
         return None
 
     # ? set default source, destination directory based on library
