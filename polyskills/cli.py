@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from polyskills.apps.tools import SupportedTools
+from polyskills.db import set_invocation_context
 from polyskills.remote.sources import (
     GithubManager, SourceControl, SourceManager, ValidSources
 )
@@ -280,6 +281,10 @@ def main() -> None:
     """
 
     args = buildParser().parse_args()
+
+    # ? mark every fetch triggered through this entry-point as a CLI
+    # ? invocation so ``events.invoked_via`` can split usage modes.
+    set_invocation_context("cli")
 
     # ? terminal commands: 'sources', 'tools' - print and exit early
     # ? these subparsers attach a ``func`` default; manager does not.

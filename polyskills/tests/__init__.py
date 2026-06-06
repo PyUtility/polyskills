@@ -23,6 +23,23 @@ GitHub anonymous rate-limit may throttle very frequent runs - export
 to authenticate the requests.
 """
 
+import os
+import tempfile
+
+from pathlib import Path
+
+# ! redirect the polyskills tracking database to a per-process scratch
+# ! file *before* importing :mod:`polyskills` so the import-time
+# ! bootstrap never touches the real ``~/.polyskills/polyskills.db``.
+_TEST_DB_DIR = Path(tempfile.mkdtemp(prefix = "polyskills-suite-"))
+_TEST_DB     = _TEST_DB_DIR / "polyskills.db"
+
+from polyskills.db import paths as _db_paths # noqa: E402
+from polyskills.db import tracker as _db_tracker # noqa: E402
+
+_db_paths.resolve_db_path = lambda : _TEST_DB # type: ignore[assignment]
+_db_tracker.reset_tracker_for_tests()
+
 __version__ = "v1.0.0"
 
 # init-time options registrations, use base.py for shared fixtures

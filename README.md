@@ -62,6 +62,26 @@ The `**library**` requires **Python 3.12+** and is designed to have minimal over
 with the upcoming releases (requires [standard libraries](https://docs.python.org/3/library/index.html) which is shipped by
 default) of Python language and AI tools.
 
+## 🗄️ Local Tracking Database
+
+On the very first import of `polyskills`, the framework lazily creates a small SQLite database at
+`~/.polyskills/polyskills.db` and uses it to record every extension that is fetched from a remote source - whether the
+fetch is triggered through the CLI (`polyskills manager ...`) or through a direct Python API call. The schema is
+versioned (`PRAGMA user_version = 1`) and backed by three tables:
+
+  * `meta` - bookkeeping: schema version and creation timestamp.
+  * `extensions` - latest known state per `(remote_url, library, name, destination_dir)` natural key.
+  * `events` - append-only audit log; one row per fetch attempt, success or failure, including byte/file counts and
+    duration in milliseconds.
+
+The database is best-effort by design: any failure to open, write to, or upgrade the database results in a single
+`RuntimeWarning` and a silent degradation - the install path is never broken by a tracking error. Inspect the database
+with any standard SQLite client:
+
+```shell
+$ sqlite3 ~/.polyskills/polyskills.db "SELECT name, library, last_status, file_count FROM extensions;"
+```
+
 ## ⚖️ Project License
 
 This project is licensed under the [MIT License](...). Permission is granted to use, copy, modify, merge, publish,

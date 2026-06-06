@@ -50,6 +50,17 @@ under `h3` tags, while the `micro` and "version identifiers" are listed under `h
 
 </details>
 
+### PolySkills v2.0.0 | Unreleased
+
+  * 🎉 **Local Tracking Database** - `polyskills` now ships a versioned SQLite tracking database at
+    `~/.polyskills/polyskills.db` that records every extension fetch performed through either the CLI tool or the
+    direct Python API. The database is created lazily on first import and is engineered to be best-effort: any
+    failure to open or write is downgraded to a one-shot `RuntimeWarning` so the install path is never broken by a
+    tracking error. The schema (`PRAGMA user_version = 1`) ships three tables - `meta`, `extensions`, `events` - and
+    is materialised through idempotent `CREATE TABLE IF NOT EXISTS` DDL so repeat imports are no-ops.
+  * ✨ **Invocation Context** - the new `events.invoked_via` column distinguishes fetches triggered from the CLI
+    (`"cli"`) from fetches triggered through the Python API (`"api"`).
+
 ### PolySkills v1.0.0 | 2026-05-25
 
 The world of AI is evolving fastm and agent workflows are the new *norms* to build awesome projects, or to create an entire

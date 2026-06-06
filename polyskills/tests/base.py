@@ -21,6 +21,8 @@ from typing import Set
 
 import urllib3
 
+from polyskills.db import paths as _db_paths
+from polyskills.db import tracker as _db_tracker
 from polyskills.remote.sources import GithubManager, SourceControl
 
 # silence verify=False noise + GitHub redirect warnings during runs
@@ -63,7 +65,10 @@ class GithubManagerTestCase(unittest.TestCase):
         """
         Class-level fixture that builds a single
         :class:`GithubManager` shared by every test method in the
-        class to avoid re-creating the HTTP session needlessly.
+        class to avoid re-creating the HTTP session needlessly. Also
+        redirects the tracker database to a per-class temporary file
+        so the live ``~/.polyskills/polyskills.db`` is never touched
+        by the test suite.
         """
 
         cls.logger = logging.getLogger(
@@ -72,6 +77,29 @@ class GithubManagerTestCase(unittest.TestCase):
         cls.manager = GithubManager(
             control = SourceControl(pagination = PAGINATION)
         )
+
+        # ? redirect the tracker database to an isolated temp file
+        # ? and reset the singleton so the new path is picked up.
+        cls._db_dir = Path(
+            tempfile.mkdtemp(prefix = "polyskills-db-")
+        )
+        cls._db_file = cls._db_dir / "polyskills.db"
+        cls._original_resolver = _db_paths.resolve_db_path
+        _db_paths.resolve_db_path = lambda : cls._db_file # type: ignore[assignment]
+        _db_tracker.reset_tracker_for_tests()
+
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        """
+        Restore the original database path resolver and remove the
+        per-class temporary database directory. Ensures the test
+        suite leaves no scratch artefacts behind.
+        """
+
+        _db_tracker.reset_tracker_for_tests()
+        _db_paths.resolve_db_path = cls._original_resolver # type: ignore[assignment]
+        shutil.rmtree(cls._db_dir, ignore_errors = True)
 
 
     def setUp(self) -> None:

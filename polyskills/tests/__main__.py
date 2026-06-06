@@ -11,6 +11,12 @@ without an additional shim.
 """
 
 import os
+
+# ! suppress the import-time tracker bootstrap so the live user-level
+# ! ``~/.polyskills/polyskills.db`` is never touched by the suite.
+# ! the variable must be set before any ``polyskills`` import below.
+os.environ.setdefault("POLYSKILLS_DISABLE_BOOTSTRAP", "1")
+
 import sys
 import unittest
 

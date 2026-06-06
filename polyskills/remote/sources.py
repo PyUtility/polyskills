@@ -22,6 +22,7 @@ fetch data using :mod:`requests` is supported.
 import os
 import re
 import abc
+import time
 import shutil
 import tarfile
 
@@ -33,8 +34,45 @@ from pathlib import Path
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+from polyskills.db import get_tracker
+
 class ValidSources(Enum):
     GITHUB = "https://www.github.com/"
+
+
+def _summariseDestination(destination : Path) -> Tuple[int, int]:
+    """
+    Walk ``destination`` and return ``(file_count, byte_count)`` so
+    the tracker can record the on-disk size of a successful fetch.
+
+    The helper is best-effort: any :class:`OSError` encountered while
+    iterating is swallowed and the partial counts collected so far
+    are returned. This preserves the "tracking is never fatal"
+    contract of the framework.
+
+    :type  destination: pathlib.Path
+    :param destination: Directory whose contents must be summarised.
+
+    :rtype:   Tuple[int, int]
+    :returns: A two-tuple of ``(file_count, byte_count)``.
+    """
+
+    file_count : int = 0
+    byte_count : int = 0
+
+    try:
+        for path in destination.rglob("*"):
+            if not path.is_file():
+                continue
+            file_count += 1
+            try:
+                byte_count += path.stat().st_size
+            except OSError:
+                continue
+    except OSError:
+        pass
+
+    return (file_count, byte_count)
 
 
 @dataclass(frozen = True)
@@ -255,13 +293,122 @@ class SourceManager(abc.ABC):
         # lazy dispatch: only the requested branch is invoked
         methods : Dict[str, Callable[[], Any]] = dict(
             tags = lambda : self._getTags(remote, prefix = prefix),
-            extensions = lambda : self._getExtensions(
-                remote, name, source, destination, # type: ignore[arg-type]
+            extensions = lambda : self._trackedExtensions(
+                remote, name, library, # type: ignore[arg-type]
+                source, destination, # type: ignore[arg-type]
                 version, formatter, exists # type: ignore[arg-type]
             )
         )
 
         return methods[mode]() # return the underlying assets
+
+
+    def _trackedExtensions(
+        self, remote : str, name : str, library : str,
+        source : Path, destination : Path, version : str,
+        formatter : Optional[Callable], exists : str
+    ) -> None:
+        """
+        Internal wrapper around :meth:`_getExtensions` that records
+        every fetch attempt - success or failure - into the local
+        polyskills tracking database. The wrapper sits inside the
+        abstract base class so every concrete remote provider gets
+        tracking for free without any per-provider wiring.
+
+        The wrapper is engineered to never alter the observable
+        behaviour of :meth:`_getExtensions`: any tracker-side
+        exception is swallowed by the :class:`Tracker` itself, and
+        the original exception (if any) raised by
+        :meth:`_getExtensions` is re-raised unchanged.
+
+        :type  remote: str
+        :param remote: Remote URL forwarded verbatim to
+            :meth:`_getExtensions`.
+
+        :type  name: str
+        :param name: Extension leaf name, also used as the natural
+            key component on ``extensions``.
+
+        :type  library: str
+        :param library: Library kind (``"skills"`` or ``"agents"``).
+
+        :type  source: pathlib.Path
+        :param source: Source directory on the remote.
+
+        :type  destination: pathlib.Path
+        :param destination: Local destination directory.
+
+        :type  version: str
+        :param version: Requested tag, branch, or sha.
+
+        :type  formatter: Optional[Callable]
+        :param formatter: Optional formatter forwarded as-is to
+            :meth:`_getExtensions`.
+
+        :type  exists: str
+        :param exists: One of ``"fail"``, ``"overwrite"``, ``"merge"``.
+
+        :rtype:   None
+        :returns: Nothing - the wrapper preserves the contract of
+            :meth:`_getExtensions` which itself returns ``None``.
+        """
+
+        tracker = get_tracker()
+        owner   : Optional[str] = None
+        repo    : Optional[str] = None
+
+        try:
+            owner, repo = self.getSlug(remote = remote)
+        except Exception:
+            owner, repo = None, None
+
+        absolute_destination = str(Path(destination).resolve())
+        source_dir_posix     = Path(str(source)).as_posix()
+
+        extension_id = tracker.record_start(
+            source_kind = self.source.name,
+            remote_url = remote,
+            owner = owner,
+            repository = repo,
+            library = library,
+            name = name,
+            requested_version = version,
+            source_dir = source_dir_posix,
+            destination_dir = absolute_destination,
+            exists_policy = exists
+        )
+
+        action = "fetch" if exists == "fail" else exists
+        started_at = time.monotonic()
+
+        try:
+            result = self._getExtensions(
+                remote, name, source, destination,
+                version, formatter, exists
+            )
+        except Exception as exc:
+            duration_ms = int((time.monotonic() - started_at) * 1000)
+            tracker.record_failure(
+                extension_id = extension_id,
+                action = action,
+                error = repr(exc),
+                duration_ms = duration_ms
+            )
+            raise
+
+        duration_ms = int((time.monotonic() - started_at) * 1000)
+        file_count, byte_count = _summariseDestination(
+            Path(absolute_destination)
+        )
+        tracker.record_success(
+            extension_id = extension_id,
+            action = action,
+            file_count = file_count,
+            byte_count = byte_count,
+            duration_ms = duration_ms
+        )
+
+        return result
 
 
     @abc.abstractmethod

@@ -17,3 +17,19 @@ providing one source of truth across different system and projects.
 __version__ = "v1.0.0"
 
 # init-time options registrations, use api/ for public functions
+
+# ? bootstrap the local tracking database on first import; the call
+# ? is wrapped in a broad try/except so any unexpected failure (read
+# ? only home dir, exotic filesystem) cannot ever break ``import``.
+# ? the bootstrap honours the internal POLYSKILLS_DISABLE_BOOTSTRAP
+# ? hook so test harnesses can suppress on-disk artefacts entirely.
+import os as _os
+
+if _os.environ.get("POLYSKILLS_DISABLE_BOOTSTRAP", "").lower() not in (
+    "1", "true", "yes"
+):
+    try:
+        from polyskills.db import get_tracker as _get_tracker
+        _get_tracker()
+    except Exception:
+        pass
