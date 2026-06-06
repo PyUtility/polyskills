@@ -14,6 +14,6 @@ and update portable LLM "skills", "agents" from remote URL thus
 providing one source of truth across different system and projects.
 """
 
-__version__ = "v1.0.0"
+__version__ = "v2.0.0"
 
 # init-time options registrations, use api/ for public functions
