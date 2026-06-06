@@ -18,11 +18,42 @@ The CLI tool is developed to manage LLM essential functions - like
 ``SKILLS.md``, ``AGENTS.md`` etc. required to refine the contents.
 """
 
+import os
 import sys
 import argparse
 
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
+
+
+def _expandUserPath(value : Union[str, Path]) -> Path:
+    """
+    Expand shell-style ``~`` and environment-variable references in a
+    user-supplied path before it is fed to the dispatcher.
+
+    The CLI accepts paths like ``~/.claude/skills/<name>`` or
+    ``$HOME/.claude/skills/<name>`` (``%USERPROFILE%\\...`` on Windows)
+    for the ``--destination`` and ``--source`` flags. :class:`pathlib.Path`
+    does not expand any of those tokens on construction, so a literal
+    ``~`` directory was previously being created next to the current
+    working directory. This helper centralises the expansion contract
+    (``expandvars`` then ``expanduser``) so both flags share the same
+    behaviour and future flags can opt-in trivially.
+
+    :type  value: Union[str, pathlib.Path]
+    :param value: The raw, possibly tokenised, path supplied by the
+        user on the command line.
+
+    :rtype:   pathlib.Path
+    :returns: A :class:`pathlib.Path` with ``$VAR`` / ``%VAR%`` and
+        ``~`` segments resolved against the current process
+        environment. Unresolvable tokens are left untouched, matching
+        the semantics of :func:`os.path.expandvars` and
+        :meth:`pathlib.Path.expanduser`.
+    """
+
+    expanded = os.path.expandvars(os.fspath(value))
+    return Path(expanded).expanduser()
 
 from polyskills.apps.tools import SupportedTools
 from polyskills.remote.sources import (
@@ -381,7 +412,9 @@ def main() -> None:
 
     # ? dispatch the 'list' subcommand: enumerate extensions and exit
     if args.command == "list":
-        source = Path(args.source or f"./{args.library}").as_posix()
+        source = _expandUserPath(
+            args.source or f"./{args.library}"
+        ).as_posix()
         control = SourceControl(
             pagination = args.pagination, token = args.token
         )
@@ -407,8 +440,14 @@ def main() -> None:
         return None
 
     # ? set default source, destination directory based on library
-    args.source = Path(args.source or f"./{args.library}").as_posix()
-    args.destination = Path(
+    # ? expanding ``~`` and environment variables here lets users
+    # ? supply familiar shell-style paths like
+    # ? ``--destination ~/.claude/skills/<name>`` without surprising
+    # ? side-effects (a literal ``~`` directory next to the cwd).
+    args.source = _expandUserPath(
+        args.source or f"./{args.library}"
+    ).as_posix()
+    args.destination = _expandUserPath(
         args.destination or f"./{args.library}/{args.name}"
     )
 
