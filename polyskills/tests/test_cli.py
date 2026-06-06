@@ -153,17 +153,24 @@ class TestBuildParser(unittest.TestCase):
             self.assertIn(member.name, rendered)
 
 
-    def test_tools_subcommand_is_noop_placeholder(self) -> None:
+    def test_tools_subcommand_attaches_func_default(self) -> None:
         """
-        The ``tools`` sub-command is currently a no-op placeholder -
-        its ``func`` default must be callable and must return ``None``
-        so :func:`cli.main` skips the print branch cleanly.
+        The ``tools`` sub-command attaches a callable ``func`` default
+        that yields a string enumerating every member of
+        :class:`SupportedTools`, mirroring the ``sources`` sub-command.
         """
+
+        from polyskills.apps.tools import SupportedTools
 
         args = _parse(["tools"])
 
+        self.assertTrue(hasattr(args, "func"))
         self.assertTrue(callable(args.func))
-        self.assertIsNone(args.func())
+
+        rendered = args.func()
+        self.assertIsInstance(rendered, str)
+        for member in SupportedTools:
+            self.assertIn(member.name, rendered)
 
 
     def test_manager_requires_remote_and_library(self) -> None:
@@ -412,18 +419,22 @@ class TestMainDispatch(unittest.TestCase):
         fake_get.assert_not_called()
 
 
-    def test_tools_command_is_silent_noop(self) -> None:
+    def test_tools_command_prints_listing_and_exits(self) -> None:
         """
-        ``polyskills tools`` is a documented placeholder - its
-        callable returns ``None`` so :func:`cli.main` must not print
-        and must not invoke the dispatcher.
+        ``polyskills tools`` must print the rendered listing of
+        supported LLM tools to stdout and return without invoking the
+        manager dispatcher, mirroring ``polyskills sources``.
         """
+
+        from polyskills.apps.tools import SupportedTools
 
         with mock.patch.object(cli, "get") as fake_get:
             code, stdout, _ = _run_main(["tools"])
 
         self.assertEqual(code, 0)
-        self.assertEqual(stdout, "")
+        self.assertIn("Available LLM Tools", stdout)
+        for member in SupportedTools:
+            self.assertIn(member.name, stdout)
         fake_get.assert_not_called()
 
 

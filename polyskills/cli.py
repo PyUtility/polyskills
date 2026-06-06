@@ -167,8 +167,19 @@ def buildParser() -> argparse.ArgumentParser:
     remoteControls = buildRemoteControls()
 
     # ? Creating Subparsers:: LIST - Enumerate Library Contents
+    # ? NOTE: an explicit ``usage`` string is supplied to bypass an
+    # ? upstream CPython 3.12.0-3.12.4 ``argparse`` regression in
+    # ? :func:`argparse.HelpFormatter._format_usage` that fires an
+    # ? ``AssertionError`` while wrapping long auto-generated usage
+    # ? lines. Providing ``usage`` short-circuits the buggy code path
+    # ? without changing the user-facing semantics of the parser.
     listing = subparser.add_parser(
-        "list", parents = [remoteControls], help = (
+        "list", parents = [remoteControls],
+        usage = (
+            "polyskills list [-h] [-s SOURCE] [--pagination PAGINATION] "
+            "[--token TOKEN] [--version VERSION] remote LIBRARY"
+        ),
+        help = (
             "List the available extensions (skills, agents, etc.) "
             "hosted under the source directory of a remote repository "
             "without downloading any content. Useful to discover the "
@@ -190,8 +201,16 @@ def buildParser() -> argparse.ArgumentParser:
     )
 
     # ? Creating Subparsers:: MANAGE - Manage Remote Library
+    # ? NOTE: see the ``list`` sub-parser above for the rationale on
+    # ? why an explicit ``usage`` string is supplied here.
     manager = subparser.add_parser(
-        "manager", parents = [remoteControls], help = (
+        "manager", parents = [remoteControls],
+        usage = (
+            "polyskills manager [-h] -n NAME [--exists {fail,overwrite,merge}] "
+            "[-d DESTINATION] [-s SOURCE] [--pagination PAGINATION] "
+            "[--token TOKEN] [--version VERSION] remote LIBRARY ..."
+        ),
+        help = (
             "Main method to manage skills, agents, etc. for a LLM "
             "tool, from remote sources, i.e., to fetch and/or update "
             "the library content in different projects or systems. "
