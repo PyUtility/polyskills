@@ -31,6 +31,7 @@ contracts for the underlying :class:`GithubManager` are exercised by
 """
 
 import io
+import os
 import sys
 import argparse
 import contextlib
@@ -572,6 +573,197 @@ class TestMainDispatch(unittest.TestCase):
                 "manager", "https://gitlab.com/foo/bar",
                 "--name", _NAME, "skills"
             ])
+
+
+class TestDestinationExpansion(unittest.TestCase):
+    """
+    Regression tests for the ``--destination`` (and mirror
+    ``--source``) path-expansion contract. The CLI must expand the
+    user-home shorthand ``~`` and any environment variable references
+    (``$VAR`` / ``${VAR}`` / ``%VAR%``) *before* the value is handed
+    off to :func:`cli.get`, otherwise a literal ``~`` directory is
+    silently created next to the current working directory instead
+    of the documented user-skills location (e.g.,
+    ``~/.claude/skills/<name>``).
+
+    These cases are kept hermetic: :func:`cli.get` is mocked so no
+    HTTP requests are made and no files are written - the tests only
+    inspect the keyword payload that the dispatcher would forward.
+    """
+
+    def _assert_expanded(self, raw: str, kw: str, kwargs: dict) -> Path:
+        """
+        Shared assertion helper: the keyword ``kw`` in ``kwargs`` must
+        be a path that no longer contains a leading ``~`` segment and
+        no unresolved ``$VAR`` / ``%VAR%`` tokens.
+
+        :returns: The forwarded path, normalised to a :class:`Path`.
+        """
+
+        forwarded = Path(kwargs[kw])
+        rendered = forwarded.as_posix()
+
+        self.assertFalse(
+            rendered.startswith("~"),
+            f"`{kw}` retained a literal '~' prefix: {rendered!r} "
+            f"(input was {raw!r})"
+        )
+        self.assertNotIn("$", rendered)
+        self.assertNotIn("%", rendered)
+
+        # ? expanding ``~`` must yield an absolute path; a leftover
+        # ? relative path is the canonical signature of the bug.
+        self.assertTrue(
+            forwarded.is_absolute(),
+            f"`{kw}` was not expanded to an absolute path: "
+            f"{rendered!r} (input was {raw!r})"
+        )
+        return forwarded
+
+
+    def test_destination_tilde_is_expanded(self) -> None:
+        """
+        ``--destination ~/.claude/skills/<name>`` must be expanded to
+        the user's home directory before being forwarded to
+        :func:`cli.get`. This is the exact bug report: a literal
+        ``~`` was being treated as a relative directory.
+        """
+
+        raw = f"~/.claude/skills/{_NAME}"
+
+        with mock.patch.object(cli, "get") as fake_get:
+            code, _, _ = _run_main([
+                "manager", _REMOTE,
+                "--name", _NAME,
+                "--destination", raw,
+                "skills"
+            ])
+
+        self.assertEqual(code, 0)
+        fake_get.assert_called_once()
+        forwarded = self._assert_expanded(
+            raw, "destination", fake_get.call_args.kwargs
+        )
+
+        expected = Path(raw).expanduser().resolve(strict = False)
+        self.assertEqual(
+            forwarded.resolve(strict = False).as_posix(),
+            expected.as_posix()
+        )
+
+        parts = forwarded.as_posix().split("/")
+        self.assertIn(".claude", parts)
+        self.assertIn("skills", parts)
+        self.assertEqual(parts[-1], _NAME)
+
+
+    def test_source_tilde_is_expanded(self) -> None:
+        """
+        ``--source`` must follow the same expansion rule as
+        ``--destination`` so users can mirror a remote layout rooted
+        at their home directory without breaking the dispatch.
+        """
+
+        raw = "~/remote-skills"
+
+        with mock.patch.object(cli, "get") as fake_get:
+            code, _, _ = _run_main([
+                "manager", _REMOTE,
+                "--name", _NAME,
+                "--source", raw,
+                "skills"
+            ])
+
+        self.assertEqual(code, 0)
+        self._assert_expanded(raw, "source", fake_get.call_args.kwargs)
+
+
+    def test_destination_envvar_is_expanded(self) -> None:
+        """
+        An environment-variable reference in ``--destination`` (using
+        the platform-native syntax) must also be resolved before
+        dispatch so shell-style values from CI configs work.
+        """
+
+        marker = "POLYSKILLS_TEST_HOME"
+        target = Path.home().as_posix()
+        raw_unix    = f"${marker}/.claude/skills/{_NAME}"
+        raw_windows = f"%{marker}%\\.claude\\skills\\{_NAME}"
+
+        # ? exercise both syntaxes so the test is meaningful on every
+        # ? supported platform; ``os.path.expandvars`` understands
+        # ? ``$VAR`` everywhere and ``%VAR%`` on Windows.
+        with mock.patch.dict(os.environ, {marker: target}, clear = False):
+            for raw in (raw_unix, raw_windows):
+                with mock.patch.object(cli, "get") as fake_get:
+                    code, _, _ = _run_main([
+                        "manager", _REMOTE,
+                        "--name", _NAME,
+                        "--destination", raw,
+                        "skills"
+                    ])
+
+                self.assertEqual(code, 0, msg = f"input: {raw!r}")
+                kwargs = fake_get.call_args.kwargs
+                rendered = Path(kwargs["destination"]).as_posix()
+
+                # ? on POSIX hosts ``%VAR%`` is *not* an env-var
+                # ? syntax, so just guarantee no token leaked through;
+                # ? for ``$VAR`` we additionally assert the resolved
+                # ? prefix is correct.
+                self.assertNotIn(f"${marker}", rendered)
+                if raw is raw_unix:
+                    self.assertTrue(
+                        rendered.startswith(target),
+                        f"$VAR not resolved: {rendered!r}"
+                    )
+
+
+    def test_absolute_destination_is_passed_through(self) -> None:
+        """
+        An already-absolute ``--destination`` must be forwarded
+        verbatim (modulo POSIX normalisation) - the expansion logic
+        must not alter paths that have nothing to expand.
+        """
+
+        raw = Path.home().joinpath(
+            ".claude", "skills", _NAME
+        ).as_posix()
+
+        with mock.patch.object(cli, "get") as fake_get:
+            code, _, _ = _run_main([
+                "manager", _REMOTE,
+                "--name", _NAME,
+                "--destination", raw,
+                "skills"
+            ])
+
+        self.assertEqual(code, 0)
+        kwargs = fake_get.call_args.kwargs
+        self.assertEqual(
+            Path(kwargs["destination"]).as_posix(),
+            Path(raw).as_posix()
+        )
+
+
+    def test_default_destination_unchanged_when_flag_omitted(self) -> None:
+        """
+        When ``--destination`` is omitted the dispatcher must continue
+        to derive ``./<library>/<name>`` exactly as before; the
+        expansion fix must not regress the default-derivation path.
+        """
+
+        with mock.patch.object(cli, "get") as fake_get:
+            code, _, _ = _run_main([
+                "manager", _REMOTE, "--name", _NAME, "skills"
+            ])
+
+        self.assertEqual(code, 0)
+        kwargs = fake_get.call_args.kwargs
+        self.assertEqual(
+            Path(kwargs["destination"]).as_posix(),
+            Path(f"./{_LIBRARY}/{_NAME}").as_posix()
+        )
 
 
 if __name__ == "__main__":
