@@ -60,37 +60,7 @@ def buildParser() -> argparse.ArgumentParser:
         dest = "command", required = True, metavar = "COMMAND"
     )
 
-    # ? Creating Subparsers:: SOURCES - List Available Sources
-    tools = subparser.add_parser(
-        "tools", help = (
-            "List the supported tools which either accepts agents "
-            "skills (https://agentskills.io/home) file, or a converter "
-            "is available to generate prompt. For example, tools like "
-            "Claude Code is built to accept the 'SKILLS.md' or an "
-            "'AGENTS.md' file, while CodeX requires a system prompt. "
-            "The manager accepts argument to set the tool name so "
-            "that the content from the remote is safely converted. "
-            "The terminal exists after supported list display."
-        )
-    )
-    tools.set_defaults(
-        func = lambda : None # TODO
-    )
-
-    # ? Creating Subparsers:: SOURCES - List Available Sources
-    sources = subparser.add_parser(
-        "sources", help = (
-            "List the available (or supported) remote sources, and exit."
-        )
-    )
-    sources.set_defaults(
-        func = lambda : "Available Sources:\n" + "\t".join([
-            f"\t>> {str(idx + 1).zfill(2)}. {mem.name} - {mem.value}"
-            for idx, mem in enumerate(ValidSources)
-        ])
-    )
-
-    # ? Create Connon [shared] Agruments for Subparsers::
+    # ? Create Common [shared] Agruments for Subparsers::
     # ? buildRemoteControls() - Control Pagination, Tokenization, etc.
     def buildRemoteControls() -> argparse.ArgumentParser:
         """
@@ -108,6 +78,22 @@ def buildParser() -> argparse.ArgumentParser:
         """
 
         remoteCommon = argparse.ArgumentParser(add_help = False)
+
+        remoteCommon.add_argument(
+            "remote", help = (
+                "Remote URL for the Skills Repository, e.g., "
+                "https://github.com/<owner>/<repository>. Check the list "
+                "of supported remote sources using 'polyskills sources'."
+            )
+        )
+
+        remoteCommon.add_argument(
+            "-s", "--source", type = str, default = None,
+            metavar = "", help = (
+                "Source directory to enumerate, defaults to './skills' "
+                "for the 'skills' library, './agents' for 'agents', etc."
+            )
+        )
 
         remoteCommon.add_argument(
             "--pagination", metavar = "[100]", type = int, default = 100,
@@ -131,8 +117,53 @@ def buildParser() -> argparse.ArgumentParser:
             )
         )
 
+        remoteCommon.add_argument(
+            "--version", type = str, default = "master",
+            metavar = "[master]", help = (
+                "Exact version (a tag or a commit SHA) at which to list "
+                "the extensions, defaults to 'master'."
+            )
+        )
+
         return remoteCommon
 
+    # ? Creating Subparsers:: SOURCES - List Available Sources
+    tools = subparser.add_parser(
+        "tools", help = (
+            "List the supported tools which either accepts agents "
+            "skills (https://agentskills.io/home) file, or a converter "
+            "is available to generate prompt. For example, tools like "
+            "Claude Code is built to accept the 'SKILLS.md' or an "
+            "'AGENTS.md' file, while CodeX requires a system prompt. "
+            "The manager accepts argument to set the tool name so "
+            "that the content from the remote is safely converted. "
+            "The terminal exists after supported list display."
+        )
+    )
+    tools.set_defaults(
+        func = lambda : "Available LLM Tools:\n" + "".join([
+            f">> {str(idx + 1).zfill(2)}. {mem.name} - {mem.value}\n"
+            for idx, mem in enumerate(SupportedTools)
+        ])
+    )
+
+    # ? Creating Subparsers:: SOURCES - List Available Sources
+    sources = subparser.add_parser(
+        "sources", help = (
+            "List the available (or supported) remote sources, and exit. "
+            "These remote sources typically are version controlled "
+            "systems like 'github', etc. where repository are available, "
+            "and the contents are available via REST API endpoints."
+        )
+    )
+    sources.set_defaults(
+        func = lambda : "Available Sources:\n" + "".join([
+            f">> {str(idx + 1).zfill(2)}. {mem.name} - {mem.value}\n"
+            for idx, mem in enumerate(ValidSources)
+        ])
+    )
+
+    # shared remote arguments across sub-parsers
     remoteControls = buildRemoteControls()
 
     # ? Creating Subparsers:: LIST - Enumerate Library Contents
@@ -145,43 +176,6 @@ def buildParser() -> argparse.ArgumentParser:
         )
     )
 
-    listing.add_argument(
-        "remote", help = (
-            "Remote URL for the Skills Repository, e.g., "
-            "https://github.com/<owner>/<repository>. Check the list "
-            "of supported remote sources using 'polyskills sources'."
-        )
-    )
-
-    listing.add_argument(
-        "--version", type = str, default = "master", metavar = "[master]",
-        help = (
-            "Exact version (a tag or a commit SHA) at which to list "
-            "the extensions, defaults to 'master'."
-        )
-    )
-
-    listing.add_argument(
-        "-s", "--source", type = str, default = None, metavar = "",
-        help = (
-            "Source directory to enumerate, defaults to './skills' "
-            "for the 'skills' library, './agents' for 'agents', etc."
-        )
-    )
-
-    listing_libraries = listing.add_subparsers(
-        dest = "library", required = True, metavar = "LIBRARY", help = (
-            "Library type to enumerate (skills, agents, etc.)."
-        )
-    )
-
-    listing_libraries.add_parser(
-        "skills", help = "List the available skills on the remote."
-    )
-    listing_libraries.add_parser(
-        "agents", help = "List the available agents on the remote."
-    )
-
     # ? Creating Subparsers:: MANAGE - Manage Remote Library
     manager = subparser.add_parser(
         "manager", parents = [remoteControls], help = (
@@ -189,14 +183,6 @@ def buildParser() -> argparse.ArgumentParser:
             "tool, from remote sources, i.e., to fetch and/or update "
             "the library content in different projects or systems. "
             "Check 'polyskills manage --help' for more details."
-        )
-    )
-
-    manager.add_argument(
-        "remote", help = (
-            "Remote URL for the Skills Repository, e.g., "
-            "https://github.com/<owner>/<repository>. Check the list "
-            "of supported remote sources using 'polyskills sources'."
         )
     )
 
@@ -212,15 +198,6 @@ def buildParser() -> argparse.ArgumentParser:
     )
 
     manager.add_argument(
-        "--version", type = str, default = "master", metavar = "[master]",
-        help = (
-            "Exact version (a tag or a commit SHA) of the extension to "
-            "fetch, defaults to 'master' which resolves to the latest "
-            "content on the default branch of the remote repository."
-        )
-    )
-
-    manager.add_argument(
         "--exists", type = str, metavar = "fail", default = "fail",
         choices = ("fail", "overwrite", "merge"), help = (
             "Behavior when the destination directory already exists "
@@ -228,17 +205,6 @@ def buildParser() -> argparse.ArgumentParser:
             "removes and recreates the destination, and 'merge' "
             "extracts on top of the existing tree (overwrites on "
             "conflict). Defaults to 'fail'."
-        )
-    )
-
-    manager.add_argument(
-        "-s", "--source", type = str, default = None,
-        metavar = "", help = (
-            "Source directory for the remote from which the extension "
-            "is fetched, defaults to ./skills for `--library skills` "
-            "mode or ./agents for `--library agents` mode, etc. as "
-            "per the Agents Skills [https://agentskills.io/home] "
-            "standards."
         )
     )
 
