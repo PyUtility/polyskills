@@ -241,7 +241,7 @@ class SourceManager(abc.ABC):
         # list of supported modes; keyword arguments control
         # always use lower case naming for modes; in-built control
         mode = mode.lower()
-        supported = ["tags", "extensions"]
+        supported = ["tags", "extensions", "list"]
         assert mode in supported, \
             f"Mode = `{mode}` is not in {supported}"
 
@@ -252,13 +252,20 @@ class SourceManager(abc.ABC):
             assert library is not None, \
                 f"Library cannot be null, supported are {supported}"
 
+        if mode == "list":
+            assert library is not None, \
+                f"Library cannot be null, supported are {supported}"
+
         # lazy dispatch: only the requested branch is invoked
         methods : Dict[str, Callable[[], Any]] = dict(
             tags = lambda : self._getTags(remote, prefix = prefix),
             extensions = lambda : self._getExtensions(
                 remote, name, source, destination, # type: ignore[arg-type]
                 version, formatter, exists # type: ignore[arg-type]
-            )
+            ),
+            list = lambda : self._listExtensions(
+                remote, source, version # type: ignore[arg-type]
+            ),
         )
 
         return methods[mode]() # return the underlying assets
@@ -287,6 +294,26 @@ class SourceManager(abc.ABC):
         flush the content to the "destination" directory. In addition,
         if any additional parsing is required by the LLM tool then
         the content should be processed accordingly.
+        """
+
+        pass
+
+
+    @abc.abstractmethod
+    def _listExtensions(
+        self, remote : str, source : Path, version : str = "master"
+    ) -> List[str]:
+        """
+        List the immediate child directory names available under the
+        ``source`` directory of the remote at the given ``version``.
+
+        Each child directory typically corresponds to one extension
+        (a skill, an agent, etc.) packaged per the Agents Skills
+        [https://agentskills.io/home] standards.
+
+        :rtype:   List[str]
+        :returns: Sorted list of directory names. Files at the
+            ``source`` root are intentionally excluded.
         """
 
         pass
@@ -528,3 +555,49 @@ class GithubManager(SourceManager):
                     archive_path.unlink()
                 except OSError:
                     pass
+
+
+    def _listExtensions(
+        self, remote : str, source : Path, version : str = "master",
+        **kwargs
+    ) -> List[str]:
+        """
+        Lists the immediate sub-directories under ``source`` for a
+        GitHub-hosted repository using the Contents REST API endpoint
+        ``GET /repos/{owner}/{repo}/contents/{path}?ref={version}``.
+
+        Only entries with ``type == "dir"`` are returned (each such
+        directory corresponds to a single extension), and the result
+        is sorted alphabetically for deterministic CLI output.
+        """
+
+        timeout = kwargs.get("timeout", 30)
+        owner, repository = self.getSlug(remote = remote)
+
+        sub = Path(str(source)).as_posix().lstrip("./").strip("/")
+        uri = (
+            "https://api.github.com/repos/"
+            "{owner}/{repository}/contents/{path}?ref={ref}"
+        ).format(
+            owner = owner, repository = repository,
+            path = sub, ref = version
+        )
+
+        response = requests.get(
+            uri, verify = False,
+            headers = self.headers, timeout = timeout
+        )
+        response.raise_for_status()
+
+        payload = response.json()
+        if not isinstance(payload, list):
+            raise NotADirectoryError(
+                f"Source `{sub}` at {remote}@{version} is not a directory."
+            )
+
+        names = [
+            item["name"] for item in payload
+            if isinstance(item, dict) and item.get("type") == "dir"
+        ]
+
+        return sorted(names)

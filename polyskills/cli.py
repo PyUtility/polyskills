@@ -60,6 +60,73 @@ def buildParser() -> argparse.ArgumentParser:
         dest = "command", required = True, metavar = "COMMAND"
     )
 
+    # ? Create Common [shared] Agruments for Subparsers::
+    # ? buildRemoteControls() - Control Pagination, Tokenization, etc.
+    def buildRemoteControls() -> argparse.ArgumentParser:
+        """
+        Build the shared parent parser carrying remote-transport options
+        (``--pagination`` and ``--token``) that every subcommand which
+        actually contacts a remote source needs to expose.
+
+        The parser is created with ``add_help = False`` so child parsers
+        that reference it via ``parents = [...]`` can still own their own
+        ``-h / --help`` flag without triggering a duplicate-option error.
+
+        :rtype:  :class:`argparse.ArgumentParser`
+        :return: Parent parser intended only for composition through the
+            ``parents`` keyword of :meth:`add_subparsers().add_parser`.
+        """
+
+        remoteCommon = argparse.ArgumentParser(add_help = False)
+
+        remoteCommon.add_argument(
+            "remote", help = (
+                "Remote URL for the Skills Repository, e.g., "
+                "https://github.com/<owner>/<repository>. Check the list "
+                "of supported remote sources using 'polyskills sources'."
+            )
+        )
+
+        remoteCommon.add_argument(
+            "-s", "--source", type = str, default = None,
+            metavar = "", help = (
+                "Source directory to enumerate, defaults to './skills' "
+                "for the 'skills' library, './agents' for 'agents', etc."
+            )
+        )
+
+        remoteCommon.add_argument(
+            "--pagination", metavar = "[100]", type = int, default = 100,
+            help = (
+                "Set the pagination parameter that controls how many "
+                "requests are returned for a 'GET' from the REST API "
+                "endpoints, example 'https://api.github.com/repos/...' "
+                "which is the endpoint for GitHub."
+            )
+        )
+
+        remoteCommon.add_argument(
+            "--token", type = str, help = (
+                "Authentication token (typically required for a private "
+                "or a self-hosted repository) that is additionally "
+                "required for validation. It is recommended not to use "
+                "the security token in production system and should only "
+                "be used in a testing environment. The token parameter "
+                "has a lower precedency and is over written by using an "
+                "environment variable 'POLYSKILLS_REMOTE_TOKEN' value."
+            )
+        )
+
+        remoteCommon.add_argument(
+            "--version", type = str, default = "master",
+            metavar = "[master]", help = (
+                "Exact version (a tag or a commit SHA) at which to list "
+                "the extensions, defaults to 'master'."
+            )
+        )
+
+        return remoteCommon
+
     # ? Creating Subparsers:: SOURCES - List Available Sources
     tools = subparser.add_parser(
         "tools", help = (
@@ -74,59 +141,61 @@ def buildParser() -> argparse.ArgumentParser:
         )
     )
     tools.set_defaults(
-        func = lambda : None # TODO
+        func = lambda : "Available LLM Tools:\n" + "".join([
+            f">> {str(idx + 1).zfill(2)}. {mem.name} - {mem.value}\n"
+            for idx, mem in enumerate(SupportedTools)
+        ])
     )
 
     # ? Creating Subparsers:: SOURCES - List Available Sources
     sources = subparser.add_parser(
         "sources", help = (
-            "List the available (or supported) remote sources, and exit."
+            "List the available (or supported) remote sources, and exit. "
+            "These remote sources typically are version controlled "
+            "systems like 'github', etc. where repository are available, "
+            "and the contents are available via REST API endpoints."
         )
     )
     sources.set_defaults(
-        func = lambda : "Available Sources:\n" + "\t".join([
-            f"\t>> {str(idx + 1).zfill(2)}. {mem.name} - {mem.value}"
+        func = lambda : "Available Sources:\n" + "".join([
+            f">> {str(idx + 1).zfill(2)}. {mem.name} - {mem.value}\n"
             for idx, mem in enumerate(ValidSources)
         ])
     )
 
+    # shared remote arguments across sub-parsers
+    remoteControls = buildRemoteControls()
+
+    # ? Creating Subparsers:: LIST - Enumerate Library Contents
+    listing = subparser.add_parser(
+        "list", parents = [remoteControls], help = (
+            "List the available extensions (skills, agents, etc.) "
+            "hosted under the source directory of a remote repository "
+            "without downloading any content. Useful to discover the "
+            "valid '--name' values for the 'manager' command."
+        )
+    )
+
+    # ? library selector mirrors the 'manager' sub-sub-parser choices
+    # ? and is also used as the fallback for '--source' (./<library>)
+    listing.add_argument(
+        "library", metavar = "LIBRARY",
+        choices = ("skills", "agents", "commands", "hooks"),
+        help = (
+            "Library type to enumerate on the remote, one of "
+            "'skills', 'agents', 'commands', 'hooks'. Also used as "
+            "the default '--source' directory (./<library>) when "
+            "'--source' is not provided."
+        )
+    )
+
     # ? Creating Subparsers:: MANAGE - Manage Remote Library
     manager = subparser.add_parser(
-        "manager", help = (
+        "manager", parents = [remoteControls], help = (
             "Main method to manage skills, agents, etc. for a LLM "
             "tool, from remote sources, i.e., to fetch and/or update "
             "the library content in different projects or systems. "
             "Check 'polyskills manage --help' for more details."
-        )
-    )
-
-    manager.add_argument(
-        "remote", help = (
-            "Remote URL for the Skills Repository, e.g., "
-            "https://github.com/<owner>/<repository>. Check the list "
-            "of supported remote sources using 'polyskills sources'."
-        )
-    )
-
-    manager.add_argument(
-        "--pagination", metavar = "[100]", type = int,
-        default = 100, help = (
-            "Set the pagination parameter that controls how many "
-            "requests are returned for a 'GET' from the REST API "
-            "endpoints, example 'https://api.github.com/repos/...' "
-            "which is the endpoint for GitHub."
-        )
-    )
-
-    manager.add_argument(
-        "--token", type = str, help = (
-            "Authentication token (typically required for a private "
-            "or a self-hosted repository) that is additionally "
-            "required for validation. It is recommended not to use "
-            "the security token in production system and should only "
-            "be used in a testing environment. The token parameter "
-            "has a lower precedency and is over written by using an "
-            "environment variable 'POLYSKILLS_REMOTE_TOKEN' value."
         )
     )
 
@@ -142,33 +211,13 @@ def buildParser() -> argparse.ArgumentParser:
     )
 
     manager.add_argument(
-        "--version", type = str, default = "master", metavar = "[master]",
-        help = (
-            "Exact version (a tag or a commit SHA) of the extension to "
-            "fetch, defaults to 'master' which resolves to the latest "
-            "content on the default branch of the remote repository."
-        )
-    )
-
-    manager.add_argument(
-        "--exists", type = str, default = "fail",
+        "--exists", type = str, metavar = "fail", default = "fail",
         choices = ("fail", "overwrite", "merge"), help = (
             "Behavior when the destination directory already exists "
             "and is non-empty. 'fail' raises an error, 'overwrite' "
             "removes and recreates the destination, and 'merge' "
             "extracts on top of the existing tree (overwrites on "
             "conflict). Defaults to 'fail'."
-        )
-    )
-
-    manager.add_argument(
-        "-s", "--source", type = str, default = None,
-        metavar = "", help = (
-            "Source directory for the remote from which the extension "
-            "is fetched, defaults to ./skills for `--library skills` "
-            "mode or ./agents for `--library agents` mode, etc. as "
-            "per the Agents Skills [https://agentskills.io/home] "
-            "standards."
         )
     )
 
@@ -273,6 +322,28 @@ def get(
     )
 
 
+def listExtensions(
+    remote : str, library : str, source : Path, version : str = "master",
+    control : Optional[SourceControl] = None
+) -> list:
+    """
+    Thin CLI-side wrapper around :meth:`SourceManager.get` (mode set
+    to ``list``) that enumerates the immediate child directories of
+    ``source`` on the remote at ``version``. Each child directory is
+    one extension (skill, agent, etc.) and the returned list is the
+    valid universe of ``--name`` values for the ``manager`` command.
+    """
+
+    manager = _resolveManager(
+        remote = remote, control = control or SourceControl()
+    )
+
+    return manager.get(
+        remote = remote, mode = "list",
+        library = library, source = source, version = version,
+    )
+
+
 def main() -> None:
     """
     Entry point for CLI tool for :mod:`polyskills` that parses the
@@ -287,6 +358,33 @@ def main() -> None:
         output = args.func()
         if output is not None:
             print(output)
+        return None
+
+    # ? dispatch the 'list' subcommand: enumerate extensions and exit
+    if args.command == "list":
+        source = Path(args.source or f"./{args.library}").as_posix()
+        control = SourceControl(
+            pagination = args.pagination, token = args.token
+        )
+
+        names = listExtensions(
+            remote = args.remote, library = args.library,
+            source = Path(source), version = args.version,
+            control = control,
+        )
+
+        header = (
+            f"Available {args.library} at "
+            f"`{source}` (version = {args.version}):"
+        )
+        if not names:
+            print(header)
+            print("\t<no extensions found>")
+            return None
+
+        print(header)
+        for idx, name in enumerate(names):
+            print(f"\t>> {str(idx + 1).zfill(2)}. {name}")
         return None
 
     # ? set default source, destination directory based on library

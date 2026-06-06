@@ -44,6 +44,8 @@ adapter to safely convert to system prompts. The Python [`framework`](./polyskil
 the required skills from any version controlled systems such that one single source of truth can be maintained across different
 production environment or projects having the same functionalities - thus providing consistent output.
 
+### 📦 Installation
+
 The package is hosted at [PyPI](http://pypi.org/project/polyskills/) and can be installed using the `pip` package manager as:
 
 ```shell
@@ -61,6 +63,136 @@ $ pip install . # cd into polyskills; editable install using -e
 The `**library**` requires **Python 3.12+** and is designed to have minimal overheads, thus providing *long-term compatibility*
 with the upcoming releases (requires [standard libraries](https://docs.python.org/3/library/index.html) which is shipped by
 default) of Python language and AI tools.
+
+### 🧰 CLI Overview
+
+Once installed, the `polyskills` command is exposed on the system `PATH`. Use the `--help` flag at any level to discover
+documentation for all sub-commands and flags. The CLI is organized around four sub-commands:
+
+| 🔖 Command | 🎯 Purpose |
+| :--- | :--- |
+| `tools` | List the supported LLM tools (e.g., Claude Code, GitHub Copilot) and exit. |
+| `sources` | List the supported remote source providers (e.g., GitHub) and exit. |
+| `list` | Enumerate available extensions under a remote `<source>` directory, no download. |
+| `manager` | Fetch a single extension (`skills` / `agents`) from the remote into a local directory. |
+
+```shell
+$ polyskills --help          # top level documentation and sub-commands
+$ polyskills manager --help  # documentation for the 'manager' sub-command
+```
+
+### 🔍 Discover Supported Tools and Sources
+
+The `tools` and `sources` sub-commands are *terminal*, i.e., they print and exit. Use them to validate that a target LLM
+tool or remote provider is supported before running a fetch.
+
+```shell
+$ polyskills tools
+>> Available LLM Tools:
+>> 01. CLAUDE_CODE - https://claude.com/product/claude-code
+>> 02. GITHUB_COPILOT - https://github.com/features/copilot
+
+$ polyskills sources
+>> Available Sources:
+>> 01. GITHUB - https://www.github.com/
+```
+
+### 📜 List Extensions on a Remote
+
+Use the `list` sub-command to enumerate the immediate child directories under a remote `--source` path without downloading
+any content. The required positional `LIBRARY` argument selects the extension family (`skills`, `agents`, `commands`,
+`hooks`) and also supplies the default `--source` directory (`./<library>`) when `--source` is omitted.
+
+```shell
+$ polyskills list https://github.com/PyUtility/polyskills skills \
+      --source ./extensions/skills
+>> Available skills at `extensions/skills` (version = master):
+>>     >> 01. git-commiter
+>>     >> 02. markdown-format
+>>     >> 03. python-code-format
+>>     >> 04. sql-code-format
+
+$ polyskills list https://github.com/PyUtility/polyskills agents \
+      --source ./extensions/agents --version master
+```
+
+### 📥 Fetch an Extension with `manager`
+
+The `manager` sub-command downloads a single extension (`skills` or `agents`) into a destination directory. The library
+type is selected via a sub-sub-parser (`skills` / `agents`) and the extension name comes from `-n / --name`. When
+`--destination` is not provided, the CLI defaults to `./<library>/<name>`.
+
+```shell
+$ polyskills manager https://github.com/PyUtility/polyskills \
+      --source ./extensions/skills \
+      --name python-code-format \
+      --destination ./.claude/skills/python-code-format \
+      skills
+
+$ polyskills manager https://github.com/PyUtility/polyskills \
+      --source ./extensions/agents \
+      -n python-code-reviewer \
+      -d ./.claude/agents/python-code-reviewer \
+      agents
+```
+
+The `--exists` flag controls behavior when the destination directory already exists and is non-empty:
+
+  * 🛑 `fail` (default) - raise `FileExistsError`, leave the destination untouched.
+  * 🧹 `overwrite` - remove the destination tree and re-extract from scratch.
+  * 🛠 `merge` - extract on top of the existing tree, overwriting on conflict.
+
+### 🔐 Authentication and Pagination
+
+For private or self-hosted repositories, an authentication token is required. The token is resolved with the following
+precedence (highest first):
+
+  1. Environment variable `POLYSKILLS_REMOTE_TOKEN` (recommended for CI / production).
+  2. The `--token` CLI flag (discouraged outside local testing - the value may leak into shell history).
+
+```shell
+$ $env:POLYSKILLS_REMOTE_TOKEN = "ghp_xxx"   # PowerShell
+$ export POLYSKILLS_REMOTE_TOKEN="ghp_xxx"   # bash / zsh
+
+$ polyskills list https://github.com/<org>/<private-repo> skills \
+      --source ./extensions/skills --pagination 100
+```
+
+The `--pagination` flag (defaults to `100`, the GitHub maximum) tunes how many entries are returned per REST API page
+during enumeration. The `--version` flag (defaults to `master`) pins the fetch to an exact tag or commit SHA so the
+extension content is reproducible across systems.
+
+### 🐍 Programmatic Usage
+
+In addition to the CLI, every primitive is exposed as a Python API so the same workflow can be embedded inside automation
+scripts, CI pipelines, or notebooks.
+
+```python
+from pathlib import Path
+
+from polyskills.cli import get, listExtensions
+from polyskills.remote.sources import SourceControl
+
+control = SourceControl(pagination = 100, token = None)
+
+names = listExtensions(
+    remote = "https://github.com/PyUtility/polyskills",
+    library = "skills",
+    source = Path("./extensions/skills"),
+    version = "master",
+    control = control,
+)
+
+get(
+    remote = "https://github.com/PyUtility/polyskills",
+    name = "python-code-format",
+    source = Path("./extensions/skills"),
+    destination = Path("./.claude/skills/python-code-format"),
+    version = "master",
+    exists = "overwrite",
+    control = control,
+)
+```
 
 ## ⚖️ Project License
 
