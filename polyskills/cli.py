@@ -176,6 +176,19 @@ def buildParser() -> argparse.ArgumentParser:
         )
     )
 
+    # ? library selector mirrors the 'manager' sub-sub-parser choices
+    # ? and is also used as the fallback for '--source' (./<library>)
+    listing.add_argument(
+        "library", metavar = "LIBRARY",
+        choices = ("skills", "agents", "commands", "hooks"),
+        help = (
+            "Library type to enumerate on the remote, one of "
+            "'skills', 'agents', 'commands', 'hooks'. Also used as "
+            "the default '--source' directory (./<library>) when "
+            "'--source' is not provided."
+        )
+    )
+
     # ? Creating Subparsers:: MANAGE - Manage Remote Library
     manager = subparser.add_parser(
         "manager", parents = [remoteControls], help = (
