@@ -37,48 +37,6 @@ _SOURCE_MANAGERS = {
 }
 
 
-def _buildRemoteCommonParser() -> argparse.ArgumentParser:
-    """
-    Build the shared parent parser carrying remote-transport options
-    (``--pagination`` and ``--token``) that every subcommand which
-    actually contacts a remote source needs to expose.
-
-    The parser is created with ``add_help = False`` so child parsers
-    that reference it via ``parents = [...]`` can still own their own
-    ``-h / --help`` flag without triggering a duplicate-option error.
-
-    :rtype:  :class:`argparse.ArgumentParser`
-    :return: Parent parser intended only for composition through the
-        ``parents`` keyword of :meth:`add_subparsers().add_parser`.
-    """
-
-    remoteCommon = argparse.ArgumentParser(add_help = False)
-
-    remoteCommon.add_argument(
-        "--pagination", metavar = "[100]", type = int, default = 100,
-        help = (
-            "Set the pagination parameter that controls how many "
-            "requests are returned for a 'GET' from the REST API "
-            "endpoints, example 'https://api.github.com/repos/...' "
-            "which is the endpoint for GitHub."
-        )
-    )
-
-    remoteCommon.add_argument(
-        "--token", type = str, help = (
-            "Authentication token (typically required for a private "
-            "or a self-hosted repository) that is additionally "
-            "required for validation. It is recommended not to use "
-            "the security token in production system and should only "
-            "be used in a testing environment. The token parameter "
-            "has a lower precedency and is over written by using an "
-            "environment variable 'POLYSKILLS_REMOTE_TOKEN' value."
-        )
-    )
-
-    return remoteCommon
-
-
 def buildParser() -> argparse.ArgumentParser:
     """
     Constructs the :func:`argparse.parser` for the :mod:`polyskills`
@@ -132,13 +90,54 @@ def buildParser() -> argparse.ArgumentParser:
         ])
     )
 
-    # ? shared parent parser holding --pagination / --token; attached
-    # ? via ``parents`` to every subcommand that talks to a remote.
-    remoteCommon = _buildRemoteCommonParser()
+    # ? Create Connon [shared] Agruments for Subparsers::
+    # ? buildRemoteControls() - Control Pagination, Tokenization, etc.
+    def buildRemoteControls() -> argparse.ArgumentParser:
+        """
+        Build the shared parent parser carrying remote-transport options
+        (``--pagination`` and ``--token``) that every subcommand which
+        actually contacts a remote source needs to expose.
+
+        The parser is created with ``add_help = False`` so child parsers
+        that reference it via ``parents = [...]`` can still own their own
+        ``-h / --help`` flag without triggering a duplicate-option error.
+
+        :rtype:  :class:`argparse.ArgumentParser`
+        :return: Parent parser intended only for composition through the
+            ``parents`` keyword of :meth:`add_subparsers().add_parser`.
+        """
+
+        remoteCommon = argparse.ArgumentParser(add_help = False)
+
+        remoteCommon.add_argument(
+            "--pagination", metavar = "[100]", type = int, default = 100,
+            help = (
+                "Set the pagination parameter that controls how many "
+                "requests are returned for a 'GET' from the REST API "
+                "endpoints, example 'https://api.github.com/repos/...' "
+                "which is the endpoint for GitHub."
+            )
+        )
+
+        remoteCommon.add_argument(
+            "--token", type = str, help = (
+                "Authentication token (typically required for a private "
+                "or a self-hosted repository) that is additionally "
+                "required for validation. It is recommended not to use "
+                "the security token in production system and should only "
+                "be used in a testing environment. The token parameter "
+                "has a lower precedency and is over written by using an "
+                "environment variable 'POLYSKILLS_REMOTE_TOKEN' value."
+            )
+        )
+
+        return remoteCommon
+
+    remoteControls = buildRemoteControls()
 
     # ? Creating Subparsers:: LIST - Enumerate Library Contents
     listing = subparser.add_parser(
-        "list", parents = [remoteCommon], help = (
+        "list", parents = [remoteControls], help = (
             "List the available extensions (skills, agents, etc.) "
             "hosted under the source directory of a remote repository "
             "without downloading any content. Useful to discover the "
@@ -185,7 +184,7 @@ def buildParser() -> argparse.ArgumentParser:
 
     # ? Creating Subparsers:: MANAGE - Manage Remote Library
     manager = subparser.add_parser(
-        "manager", parents = [remoteCommon], help = (
+        "manager", parents = [remoteControls], help = (
             "Main method to manage skills, agents, etc. for a LLM "
             "tool, from remote sources, i.e., to fetch and/or update "
             "the library content in different projects or systems. "
@@ -222,7 +221,7 @@ def buildParser() -> argparse.ArgumentParser:
     )
 
     manager.add_argument(
-        "--exists", type = str, default = "fail",
+        "--exists", type = str, metavar = "fail", default = "fail",
         choices = ("fail", "overwrite", "merge"), help = (
             "Behavior when the destination directory already exists "
             "and is non-empty. 'fail' raises an error, 'overwrite' "
