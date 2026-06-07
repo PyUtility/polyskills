@@ -52,6 +52,13 @@ under `h3` tags, while the `micro` and "version identifiers" are listed under `h
 
 ### PolySkills v2.0.0 | 2026-06-07
 
+The `v2.0.0` line redesigns `polyskills` from a "skills-only fetcher" into a portable, multi-library
+extension manager for LLM tools. A single source of truth (a remote repository) can now host
+**skills**, **agents**, **commands**, and **hooks**, fetched into any project or system through a
+hermetic, network-aware CLI. The implementation is layered (`polyskills.cli` → `polyskills.remote`
+→ provider managers) so additional remote providers (GitLab, Bitbucket, self-hosted Git, etc.)
+can be registered via the `_SOURCE_MANAGERS` registry without touching the dispatcher.
+
 > [!CAUTION]
 > **Breaking Release.** `v2.0.0` is a complete rewrite of `polyskills` and is **not** wire-compatible
 > with `v1.x`. The legacy `polyskills <remote> --get-skills / --update <name> --directory ...` flag
@@ -60,13 +67,6 @@ under `h3` tags, while the `micro` and "version identifiers" are listed under `h
 > extensions are now resolved as directories under a configurable `--source` (e.g. `./skills`,
 > `./agents`) and pinned with `--version` (a tag, branch, or commit SHA). Old scripts must be
 > rewritten — see the migration table at the end of this section.
-
-The `v2.0.0` line redesigns `polyskills` from a "skills-only fetcher" into a portable, multi-library
-extension manager for LLM tools. A single source of truth (a remote repository) can now host
-**skills**, **agents**, **commands**, and **hooks**, fetched into any project or system through a
-hermetic, network-aware CLI. The implementation is layered (`polyskills.cli` → `polyskills.remote`
-→ provider managers) so additional remote providers (GitLab, Bitbucket, self-hosted Git, etc.)
-can be registered via the `_SOURCE_MANAGERS` registry without touching the dispatcher.
 
 #### 💣 Breaking Changes
 
@@ -218,7 +218,7 @@ $ polyskills "https://www.github.com/<owner>/<repository>" --update <skill-name>
 The module is designed without any exotic dependency - the job: (I) fetch lists of skills defined under a remote version control
 system with ``git tag skillName@vX.Y.Z` format, (II) add/update the skill in the required directory.
 
-> [!WARNING] This version (v1.0.0) of the module is now deprecated. The advanced version v2 is currently being developed. The
-> module is a complete refactor and old codes are completely removed from history. Check the PyPI tarball for file details.
+> [!WARNING] This version (v1.0.0) of the module is now deprecated. The advanced version v2 is developed. The module is a
+> complete refactor and old codes are completely removed from history. Check the PyPI tarball for file details.
 
 </div>
