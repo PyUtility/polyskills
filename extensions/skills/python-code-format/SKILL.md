@@ -41,6 +41,9 @@ Never skip reading the skill or reference even for small changes.
 | Constants or ENUM Members | `SCREAMING_SNAKE_CASE` | `MONDAY` | |
 | Loop/Comprehension Variables | Short Meaningful Name | `cur` `idx` `nxt` `key` `value` | |
 
+IMPORTANT: If any code file or module is following a different naming convention (like `camelCase`) then preserve the original
+format and write accordingly.
+
 ## Critical & Mandatory Rules
 
 These rules are critical and mandatory. Always double check these rules are followed and maintained across the code or module
