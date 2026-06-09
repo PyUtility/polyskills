@@ -7,8 +7,8 @@ description:
   this agent for all Python (`*.py`) file changes - MUST BE USED for Python projects unless explictly mentioned not to.
 
 color: green
-model: sonnet
-tools: ["read", "grep", "glob", "bash", "git"]
+model: opus
+tools: ["read", "grep", "glob", "bash", "git", "write", "edit"]
 ---
 
 <div align = "center">
