@@ -2,8 +2,20 @@
 
 # LLM Essentials - Library of Skills, Agents, Workflows
 
+[![GitHub Issues](https://img.shields.io/github/issues/PyUtility/polyskills?style=plastic)](https://github.com/PyUtility/polyskills/issues)
+[![GitHub Forks](https://img.shields.io/github/forks/PyUtility/polyskills?style=plastic)](https://github.com/PyUtility/polyskills/network)
+[![GitHub Stars](https://img.shields.io/github/stars/PyUtility/polyskills?style=plastic)](https://github.com/PyUtility/polyskills/stargazers)
+[![GitHub Stars](https://img.shields.io/github/contributors/PyUtility/polyskills?style=plastic)](https://github.com/PyUtility/polyskills/contributors)
+[![LICENSE File](https://img.shields.io/github/license/PyUtility/polyskills?style=plastic)](https://github.com/PyUtility/polyskills/blob/master/LICENSE)
+[![PyPI Latest Release](https://img.shields.io/pypi/v/polyskills.svg?style=plastic)](https://pypi.org/project/polyskills)
 ![Contributor Covenant](https://img.shields.io/badge/👩‍💻_Contributor%20Covenant-2.1-4baaaa.svg?style=plastic)
 ![Contributing Guidelines](https://img.shields.io/badge/🤝-Contributing_Guidelines-blue?style=plastic)
+
+![SQLite](https://img.shields.io/badge/-SQLite-003B57?logo=sqlite&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/-PostgreSQL-4169E1?logo=postgresql&logoColor=white)
+![Python (v3)](https://img.shields.io/badge/-Python%20v3-3776AB?logo=python&logoColor=white)
+![Markdown Files](https://img.shields.io/badge/-Markdown%20Files-000000?logo=markdown&logoColor=white)
+![GIT Commits](https://img.shields.io/badge/-GIT%20Commits-F03C2E?logo=git&logoColor=white)
 
 </div>
 
