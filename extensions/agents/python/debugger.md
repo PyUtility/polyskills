@@ -9,7 +9,7 @@ description:
   failing", "stack trace", "tests are red", "reproduce", "bisect", "root cause".
 
 color: red
-model: opus
+
 tools: ["read", "grep", "glob", "bash", "git"]
 ---
 

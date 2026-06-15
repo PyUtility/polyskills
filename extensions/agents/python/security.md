@@ -9,7 +9,7 @@ description:
   review", "audit", "is this safe", "vulnerability", "secrets", "injection", "harden this".
 
 color: black
-model: opus
+
 tools: ["read", "grep", "glob", "bash", "git", "write", "edit"]
 ---
 

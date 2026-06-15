@@ -10,6 +10,7 @@ description:
 
 color: purple
 model: sonnet
+
 tools: ["read", "grep", "glob", "bash", "git", "write", "edit"]
 ---
 

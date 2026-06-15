@@ -10,7 +10,7 @@ description:
   "tighten this code", "DRY this up".
 
 color: purple
-model: opus
+
 tools: ["read", "grep", "glob", "bash", "git", "write", "edit"]
 ---
 

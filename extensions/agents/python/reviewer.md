@@ -9,7 +9,7 @@ description:
   "check my changes", "is this PR ready", "audit the diff".
 
 color: red
-model: opus
+
 tools: ["read", "grep", "glob", "git"]
 ---
 
