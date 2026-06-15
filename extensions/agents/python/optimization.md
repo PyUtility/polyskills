@@ -1,6 +1,6 @@
 ---
 name: python-code-optimization
-description:
+description: >-
   Use this agent ONLY after correctness has been confirmed by 'python-code-reviewer' and 'python-code-debugger' and locked in
   by 'python-code-testing'. The optimizer improves CPU, memory, I/O, or readability of Python code without changing observable
   behaviour. Every change must be justified by a measurement (profile, benchmark, or complexity argument) and must preserve the

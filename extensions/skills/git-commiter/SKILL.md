@@ -1,6 +1,6 @@
 ---
 name: git-commiter
-description:
+description: >-
   Governs every git commit message produced in this repository. Always invoked. Every commit subject **must** start with one or
   more emoji glyphs (e.g. `✨`, `🐛`, `🛠️`, `💣`, `📝`, `🧪`, `🤖`, `📜`, `⭐️`, `🚧`, `💡`) followed by an optional
   Conventional Commit type/scope and a concise imperative summary. Use this skill whenever the user asks to "create a commit",

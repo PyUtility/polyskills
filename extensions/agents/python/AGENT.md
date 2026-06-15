@@ -1,6 +1,6 @@
 ---
 name: python
-description:
+description: >-
   Expert Python agent for code planning, optimization, reviewing, debugging and testing that specializes in code planning which
   is always the first agent that is deployed and then a reviewing and debugging agents are deployed in parallel. When the above phases
   are green then a optimization and reviewer agent is deployed. The agent checks for security, and performance of the code. Use

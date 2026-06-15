@@ -1,6 +1,6 @@
 ---
 name: sql-code-format
-description:
+description: >-
   The skill governs all SQL code formatting, editing, reviews, modification and create a new file from scratch. Always, read
   the file in full before writing or modifying and SQL codes. The code is only applicable for file with *.sql extensions and
   should prompt user (if not already provided or understood) to understand which database flavor to use which are -

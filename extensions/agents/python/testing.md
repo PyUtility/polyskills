@@ -1,6 +1,6 @@
 ---
 name: python-code-testing
-description:
+description: >-
   Use this agent at Phase 4, AFTER 'python-code-reviewer' and 'python-code-debugger' have both green-lit correctness, to
   lock that correctness in with durable, deterministic tests. The testing agent writes new tests and extends existing ones -
   it covers the happy path, edge cases, error paths, and a regression test for every root cause the debugger reported. It is

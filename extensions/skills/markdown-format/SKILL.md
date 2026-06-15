@@ -1,6 +1,6 @@
 ---
 name: markdown-format
-description:
+description: >-
   Governs all Markdown file creation, editing, reviews, and modification. Always read the file in full before writing or
   modifying any Markdown content, even for a small change. The skill applies the exact conventions visible throughout this
   repository: `<div align = "center">` title banners, `<div align = "justify">` body wrappers, Shields.io badges, emoji

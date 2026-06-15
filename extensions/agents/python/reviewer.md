@@ -1,6 +1,6 @@
 ---
 name: python-code-reviewer
-description:
+description: >-
   Use this agent AFTER the implementation is complete and BEFORE merging or shipping. The reviewer is a high signal-to-noise
   code reviewer that flags real bugs, broken contracts, security issues, race conditions, and material style violations against
   the project `python-code-format` skill - and stays silent on trivia. The agent is read-only - it never modifies code, it only

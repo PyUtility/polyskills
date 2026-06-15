@@ -1,6 +1,6 @@
 ---
 name: python-code-debugger
-description:
+description: >-
   Use this agent when a Python program is failing - test failures, unexpected exceptions, regressions after a refactor, flaky
   CI runs, or behaviour drift between environments. The debugger reproduces the failure, isolates the smallest failing case,
   identifies the root cause with citations, and proposes a minimal fix - it does NOT proactively refactor unrelated code.

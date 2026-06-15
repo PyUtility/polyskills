@@ -1,6 +1,6 @@
 ---
 name: python-code-format
-description:
+description: >-
     Governs all Python code formatting, editing, reviews, modification, and creation from scratch. Always read the file in full
     before writing or modifying Python code, even for a small change. Use this skill when a user asks to create, edit, update,
     review or modify any content of a '*.py' file, or any Python code in a project that references this skill.

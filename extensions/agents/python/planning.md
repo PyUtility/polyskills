@@ -1,6 +1,6 @@
 ---
 name: python-code-planning
-description:
+description: >-
   Use this agent FIRST whenever a Python task spans multiple files, modules, or phases - before writing or modifying any code.
   The agent decomposes the user request into a dependency-ordered plan with explicit todos, identifies which downstream agents
   (reviewer, debugger, testing, optimizer, security) will be needed and whether they can run in parallel, and surfaces

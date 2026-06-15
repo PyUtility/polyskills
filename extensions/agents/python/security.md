@@ -1,6 +1,6 @@
 ---
 name: python-code-security
-description:
+description: >-
   Use this agent LAST, at Phase 6, after 'python-code-optimization' has green-lit the change, to perform a defensive
   security audit of the diff. The agent enumerates the attack surface, maps each finding to a CWE, cites concrete evidence,
   and may apply minimal remediations behind the correctness gate - always adding a security regression test for any hole it
