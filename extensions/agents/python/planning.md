@@ -10,6 +10,8 @@ description:
 
 color: blue
 model: opus
+effort: xhigh
+
 tools: ["read", "grep", "glob", "git"]
 ---
 
