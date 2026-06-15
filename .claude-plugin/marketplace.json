@@ -1,0 +1,31 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "polyskills",
+  "description": "LLM Essentials - a library of reusable Claude Code skills, agents, and workflows.",
+  "owner": {
+    "name": "Debmalya Pramanik",
+    "email": "dpramanik.official@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "llm-essentials",
+      "description": "Code-formatting skills (Python/SQL/Markdown), emoji-conventional git commits, and a multi-phase Python development agent suite.",
+      "source": "./extensions",
+      "category": "development",
+      "version": "2.0.0",
+      "author": {
+        "name": "Debmalya Pramanik"
+      },
+      "homepage": "https://github.com/PyUtility/polyskills",
+      "keywords": [
+        "python",
+        "sql",
+        "markdown",
+        "git",
+        "formatting",
+        "agents",
+        "skills"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "name": "llm-essentials",
+  "version": "2.0.0",
+  "description": "Curated Codex skills: Python/SQL/Markdown formatting and emoji-conventional git commits.",
+  "author": {
+    "name": "Debmalya Pramanik",
+    "email": "dpramanik.official@gmail.com",
+    "url": "https://github.com/ZenithClown"
+  },
+  "homepage": "https://github.com/PyUtility/polyskills",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "python",
+    "sql",
+    "markdown",
+    "git",
+    "formatting"
+  ],
+  "skills": "./skills",
+  "interface": {
+    "displayName": "LLM Essentials",
+    "shortDescription": "Python/SQL/Markdown formatting + git-commit skills for Codex.",
+    "category": "development"
+  }
+}

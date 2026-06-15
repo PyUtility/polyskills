@@ -1,0 +1,23 @@
+{
+  "name": "llm-essentials",
+  "version": "2.0.0",
+  "description": "Curated Claude Code skills and a multi-phase Python agent suite: code formatting (Python/SQL/Markdown), emoji-conventional git commits, and a planning -> review -> debug -> test -> optimize -> security pipeline.",
+  "author": {
+    "name": "Debmalya Pramanik",
+    "email": "dpramanik.official@gmail.com",
+    "url": "https://github.com/ZenithClown"
+  },
+  "homepage": "https://github.com/PyUtility/polyskills",
+  "repository": "https://github.com/PyUtility/polyskills.git",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "agents",
+    "python",
+    "sql",
+    "markdown",
+    "git",
+    "formatting",
+    "code-review"
+  ]
+}

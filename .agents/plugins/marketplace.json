@@ -1,0 +1,12 @@
+{
+  "plugins": [
+    {
+      "name": "llm-essentials",
+      "source": {
+        "source": "local",
+        "path": "./extensions"
+      },
+      "policy": "AVAILABLE"
+    }
+  ]
+}
