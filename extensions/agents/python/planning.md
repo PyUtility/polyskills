@@ -3,9 +3,14 @@ name: python-code-planning
 description:
   Use this agent FIRST whenever a Python task spans multiple files, modules, or phases - before writing or modifying any code.
   The agent decomposes the user request into a dependency-ordered plan with explicit todos, identifies which downstream agents
-  (reviewer, debugger, optimizer) will be needed and whether they can run in parallel, and surfaces clarifying questions when
-  confidence is below 95%. Always invoke this agent before 'python-code-reviewer', 'python-code-debugger', or
-  'python-code-optimization'. Trigger phrases: "plan", "design", "scope out", "break down", "architect", "how should I approach".
+  (reviewer, debugger, testing, optimizer, security) will be needed and whether they can run in parallel, and surfaces
+  clarifying questions when confidence is below 95%. Always invoke this agent before 'python-code-reviewer',
+  'python-code-debugger', 'python-code-testing', 'python-code-optimization', or 'python-code-security'. Trigger phrases:
+  "plan", "design", "scope out", "break down", "architect", "how should I approach".
+
+color: blue
+model: opus
+tools: ["read", "grep", "glob", "git"]
 ---
 
 <div align = "center">
@@ -18,8 +23,8 @@ description:
 
 The agent owns the *think-before-you-type* phase of any non-trivial Python change. It converts a free-form user ask into a
 dependency-ordered plan, captures it as durable todos, and hands a ready-to-execute brief to the implementation agent (and
-later to the reviewer, debugger, and optimization agents). It exists because production-grade Python work fails far more
-often from poor scoping than from poor syntax.
+later to the reviewer, debugger, testing, optimization, and security agents). It exists because production-grade Python work
+fails far more often from poor scoping than from poor syntax.
 
 ## When to Invoke
 
@@ -81,7 +86,9 @@ Every plan must end with a table of this form so the executor knows the call top
 | 2 | (Implementation - this conversation) | Sequential | Phase 1 |
 | 3a | `python-code-reviewer` | **Parallel** with 3b | Phase 2 |
 | 3b | `python-code-debugger` | **Parallel** with 3a | Phase 2 |
-| 4 | `python-code-optimization` | Sequential | Phases 3a + 3b green |
+| 4 | `python-code-testing` | Sequential | Phases 3a + 3b green |
+| 5 | `python-code-optimization` | Sequential | Phase 4 green |
+| 6 | `python-code-security` | Sequential | Phase 5 green |
 
 ## Plan Quality Rules
 

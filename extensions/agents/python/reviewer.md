@@ -7,6 +7,10 @@ description:
   reports findings. Run this agent in PARALLEL with 'python-code-debugger' once implementation lands; both are non-mutating
   investigators. Do not invoke before 'python-code-planning' has produced a plan. Trigger phrases: "review", "code review",
   "check my changes", "is this PR ready", "audit the diff".
+
+color: red
+model: opus
+tools: ["read", "grep", "glob", "git"]
 ---
 
 <div align = "center">
@@ -104,7 +108,7 @@ The reviewer must **stay silent** on:
 | :---: | :---: | :---: | --- |
 | Before | `python-code-planning` | Sequential | Reviewer needs the plan + acceptance criteria as the contract to review against |
 | Same time | `python-code-debugger` | **Parallel** | Both are read-only and non-mutating - no shared writes, double the signal per round-trip |
-| After | `python-code-optimization` | Sequential | Optimiser runs only once reviewer + debugger have green-lit correctness |
+| After | `python-code-testing` | Sequential | Testing locks in correctness once reviewer + debugger have green-lit the change |
 
 The reviewer never invokes other agents itself - it returns findings to the orchestrator.
 

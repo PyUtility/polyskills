@@ -1,12 +1,17 @@
 ---
 name: python-code-optimization
 description:
-  Use this agent ONLY after correctness has been confirmed by 'python-code-reviewer' and 'python-code-debugger'. The optimizer
-  improves CPU, memory, I/O, or readability of Python code without changing observable behaviour. Every change must be
-  justified by a measurement (profile, benchmark, or complexity argument) and must preserve the existing public API and test
-  suite. The agent is sequential and runs LAST in the agent suite. Do not invoke before 'python-code-planning'; never run in
-  parallel with reviewer or debugger - they may invalidate the optimizations. Trigger phrases: "optimize", "make it faster",
-  "reduce memory", "profile", "speed up", "tighten this code", "DRY this up".
+  Use this agent ONLY after correctness has been confirmed by 'python-code-reviewer' and 'python-code-debugger' and locked in
+  by 'python-code-testing'. The optimizer improves CPU, memory, I/O, or readability of Python code without changing observable
+  behaviour. Every change must be justified by a measurement (profile, benchmark, or complexity argument) and must preserve the
+  existing public API and test suite. The agent is sequential and runs at Phase 5, after the testing gate and before the
+  security audit. Do not invoke before 'python-code-planning'; never run in parallel with reviewer or debugger - they may
+  invalidate the optimizations. Trigger phrases: "optimize", "make it faster", "reduce memory", "profile", "speed up",
+  "tighten this code", "DRY this up".
+
+color: purple
+model: opus
+tools: ["read", "grep", "glob", "bash", "git", "write", "edit"]
 ---
 
 <div align = "center">
@@ -24,8 +29,8 @@ explicit Big-O argument supported by the algorithm. Optimizations that *feel* fa
 
 ## When to Invoke
 
-Invoke this agent **only after** both `python-code-reviewer` and `python-code-debugger` have green-lit correctness. Typical
-triggers:
+Invoke this agent **only after** `python-code-reviewer` and `python-code-debugger` have green-lit correctness and
+`python-code-testing` has locked it in with a green suite. Typical triggers:
 
   * A profiler points at a clear hot spot (top 1-3 functions by cumulative time).
   * A benchmark regressed against a baseline tagged on `master`.
@@ -119,7 +124,8 @@ keep the test suite green.
 | Before (much earlier) | `python-code-planning` | Sequential | Need agreed acceptance criteria and the baseline scope |
 | Before (immediately) | `python-code-reviewer` | Sequential | Optimizer must not run on code with known correctness issues |
 | Before (immediately) | `python-code-debugger` | Sequential | Same - no optimisation on broken code |
-| After | (none in this suite) | - | Optimizer is the terminal stage; output goes back to the orchestrator |
+| Before (immediately) | `python-code-testing` | Sequential | The green suite is the safety net that proves behaviour is preserved |
+| After | `python-code-security` | Sequential | The security audit is the terminal gate; optimization settles the code first |
 
 The optimizer must **never** run in parallel with reviewer or debugger - their findings may invalidate the optimization
 target itself, wasting the work.

@@ -7,6 +7,10 @@ description:
   Run this agent in PARALLEL with 'python-code-reviewer' once implementation lands; both are non-mutating investigators with
   no shared writes. Do not invoke before 'python-code-planning' has produced a plan. Trigger phrases: "debug", "why is this
   failing", "stack trace", "tests are red", "reproduce", "bisect", "root cause".
+
+color: red
+model: opus
+tools: ["read", "grep", "glob", "bash", "git"]
 ---
 
 <div align = "center">
@@ -135,7 +139,7 @@ experiments it would run, rather than fabricating a plausible-sounding answer.
 | :---: | :---: | :---: | --- |
 | Before | `python-code-planning` | Sequential | Need acceptance criteria + the "before" baseline |
 | Same time | `python-code-reviewer` | **Parallel** | Both are read-only and operate on the same diff with no shared writes |
-| After | `python-code-optimization` | Sequential | Never optimise broken code - debugger must clear the field first |
+| After | `python-code-testing` | Sequential | Testing turns the cleared root causes into durable regression tests |
 
 The debugger never invokes other agents itself; the orchestrator does.
 
