@@ -41,39 +41,39 @@ Run these phases in order. Phases 2 through 8 are gated by the complexity you re
 simple task collapses most of the machinery and a hard task earns all of it.
 
   1. **Frame And Scope.** Restate the task in one or two sentences. Classify it as Light, Standard, or
-     Deep from concrete cues, not from how the request was phrased. Light is a single file, well
-     specified, reversible, no research. Standard touches several files or carries some unknowns. Deep
-     is ambiguous, multi-step, cross-cutting, or research-heavy. State the level in one line. This
-     classification is the master cost governor for everything that follows.
+    Deep from concrete cues, not from how the request was phrased. Light is a single file, well
+    specified, reversible, no research. Standard touches several files or carries some unknowns. Deep
+    is ambiguous, multi-step, cross-cutting, or research-heavy. State the level in one line. This
+    classification is the master cost governor for everything that follows.
   2. **Clarify.** List the unknowns and the assumptions they force. Ask the 2 to 4 highest-leverage
-     questions only when an answer would change the approach or the cost. If nothing is genuinely
-     ambiguous, state your assumptions and proceed. Never spend a research or fan-out round on
-     something one user question would settle.
+    questions only when an answer would change the approach or the cost. If nothing is genuinely
+    ambiguous, state your assumptions and proceed. Never spend a research or fan-out round on
+    something one user question would settle.
   3. **Research.** Ground in reality before you design. Scale it: Light reads the directly relevant
-     files; Standard reads code plus targeted searches; Deep composes `/deep-research`. Prefer reading
-     and tool use over memory, and cite what you actually checked. Fan out only for genuinely
-     independent strands.
+    files; Standard reads code plus targeted searches; Deep composes `/deep-research`. Prefer reading
+    and tool use over memory, and cite what you actually checked. Fan out only for genuinely
+    independent strands.
   4. **Plan.** Decompose explicitly: the smallest correct sequence of steps. Before building, write
-     the success criteria and one concrete example of a passing result, and state how you will
-     validate. For Deep work, write the plan as a checklist the later phases tick off.
+    the success criteria and one concrete example of a passing result, and state how you will
+    validate. For Deep work, write the plan as a checklist the later phases tick off.
   5. **Build.** Execute the plan in scoped steps. If reality diverges from the plan, update the plan
-     visibly rather than silently widening scope. Defer to the format and code skills as you build.
+    vis rather than silently widening scope. Defer to the format and code skills as you build.
   6. **Validate And Iterate.** This is the core loop. Run real checks: tests, the build, `/verify` for
-     behavior, and a re-read against the success criteria. Score the result against these dimensions:
-     correctness, completeness, clarity, efficiency, and edge-case coverage, each rated 1 to 10. The bar
-     is every dimension at 8 of 10 or higher with the accuracy gate passing. Stop when the bar is met,
-     or stop after 3 rounds if it is not. A round counts as "stable" if no new weaknesses are
-     identified and scores do not improve by more than 0.5 points; two consecutive stable rounds
-     signal diminishing returns, but do not override the 3-round cap. Fix the lowest real weakness
-     first in each iteration.
+    behavior, and a re-read against the success criteria. Score the result against these dimensions:
+    correctness, completeness, clarity, efficiency, and edge-case coverage, each rated 1 to 10. The bar
+    is every dimension at 8 of 10 or higher with the accuracy gate passing. Stop when the bar is met,
+    or stop after 3 rounds if it is not. A round counts as "stable" if no new weaknesses are
+    identified and scores do not improve by more than 0.5 points; two consecutive stable rounds
+    signal diminishing returns, but do not override the 3-round cap. Fix the lowest real weakness
+    first in each iteration.
   7. **Audit.** Review adversarially, separate from validation. Try to break the result and surface
-     assumptions you never checked. Compose `/code-review`, `/security-review` when a security surface
-     is touched, and `/simplify` once correctness is settled. For Light work this is a quick pass, not
-     a fan-out.
+    assumptions you never checked. Compose `/code-review`, `/security-review` when a security surface
+    is touched, and `/simplify` once correctness is settled. For Light work this is a quick pass, not
+    a fan-out.
   8. **Report.** State honestly what you did, the final scores, what the accuracy gate caught and how
-     you fixed it, the residual risks and unverified assumptions, and the real cost relative to the
-     task. If the bar was not met within the round cap, say so and hand back the best result with the
-     gaps named. Never report a score the work did not earn.
+    you fixed it, the residual risks and unverified assumptions, and the real cost relative to the
+    task. If the bar was not met within the round cap, say so and hand back the best result with the
+    gaps named. Never report a score the work did not earn.
 
 The technique cheat-sheet, the rubric anchors, and a worked validation round live in
 [references/playbook.md](references/playbook.md).
@@ -92,6 +92,8 @@ times. Models tend to over-delegate, so fan-out is a deliberate choice you justi
 
 The classification made in Phase 1 governs the entire protocol. Use this table as your single authoritative reference for what applies at each level:
 
+<div align = "center">
+
 | Dimension | Light | Standard | Deep |
 | :---: | --- | --- | --- |
 | **Research** | Read directly relevant files only; cite all sources | Read files plus targeted searches; cite all sources | Compose `/deep-research`; multi-source verified research |
@@ -102,6 +104,8 @@ The classification made in Phase 1 governs the entire protocol. Use this table a
 | **Subagent fan-out** | None | None; optional single validation agent | Fan-out for independent research strands or candidate solutions |
 | **Score-and-iterate** | No formal scoring required | Optional scoring if helpful | Full scoring loop; bar is 8/10+ on all dimensions or stop at 3 rounds |
 | **Report expectations** | Brief summary of what was done | Statement of what was done, scores if generated, residual risks | Honest final scores, accuracy gate status, residual risks, real cost breakdown |
+
+</div>
 
 ## Subagent And Fan-Out Guidance
 
@@ -119,7 +123,7 @@ sequential or dependent steps, and do not fan out on trivial tasks.
 
 Reuse the specialists. Do not reimplement what a skill already does.
 
-</div>
+<div align = "center">
 
 | Phase | Compose With | Why |
 | :---: | --- | --- |
@@ -130,7 +134,7 @@ Reuse the specialists. Do not reimplement what a skill already does.
 | Audit | `/simplify` | Quality-only cleanup once correctness is settled |
 | Build | format and code skills | `markdown-format`, `python-code-format`, `sql-code-format`, `git-commiter`, `humanize` |
 
-<div align = "justify">
+</div>
 
 ### Handling Unavailable Or Failed Composed Skills
 
@@ -162,8 +166,6 @@ These are gates, not preferences. The high-stakes framing never licenses crossin
 
 ## Quick Checklist
 
-</div>
-
   - [ ] Was god-mode explicitly invoked, and is the task non-trivial enough to deserve it?
   - [ ] Did I classify Light, Standard, or Deep and scale effort to it instead of fanning out by default?
   - [ ] Did I ground in real reading or research before planning, and cite what I checked?
@@ -174,3 +176,5 @@ These are gates, not preferences. The high-stakes framing never licenses crossin
   - [ ] Did I defer to the format and code governor skills on their artifacts?
   - [ ] Did I confirm any irreversible action and never fabricate to hit the bar?
   - [ ] Did the final report state real scores, residual risks, and real cost?
+
+</div>
