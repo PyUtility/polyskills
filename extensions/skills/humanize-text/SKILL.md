@@ -1,5 +1,5 @@
 ---
-name: humanize
+name: humanize-text
 description:
   Governs the writing quality of natural-language prose generated in this repository, and runs on
   demand as the /humanize command to rewrite text the user pastes in. Acts as a default style
@@ -62,7 +62,7 @@ These three rules are the spine of the skill. They are gates, not preferences.
      claim's scope, quantifiers, modality (`may`, `must`, `should`), or confidence level. Add no new
      claims and drop no existing conditions. When unsure, keep the original wording.
 
-</div>
+<div align = "center">
 
 | Artifact | Governing Skill | What Humanize May Touch |
 | :---: | :---: | --- |
@@ -71,7 +71,7 @@ These three rules are the spine of the skill. They are gates, not preferences.
 | `*.py` file | `python-code-format` | Comment and docstring wording only. Code is immutable. |
 | `*.sql` file | `sql-code-format` | Comment wording only. Statements are immutable. |
 
-<div align = "justify">
+</div>
 
 Humanize is a subordinate prose refiner, not a structural authority. If a governing skill requires a
 token, keep it.
@@ -119,7 +119,7 @@ Sweep these layers after drafting. The full lexical catalogue and extended lists
 Overused vocabulary signals machine drafting. Replace it with the plainest accurate word. A
 representative subset:
 
-</div>
+<div align = "center">
 
 | Reconsider | Prefer |
 | :---: | --- |
@@ -131,7 +131,7 @@ representative subset:
 | a testament to, underscores, highlights | shows, proves |
 | pivotal, crucial, vital, key | drop it, or show why it matters |
 
-<div align = "justify">
+</div>
 
 Do not swap a word that is technically correct in context. The right word always wins over the rule.
 
@@ -167,7 +167,7 @@ Do not swap a word that is technically correct in context. The right word always
 
 Register follows the audience and the medium. Do not impose one "humanized voice" on everything.
 
-</div>
+<div align = "center">
 
 | Content Type | Cues | Keep | Cut |
 | :---: | --- | --- | --- |
@@ -176,7 +176,7 @@ Register follows the audience and the medium. Do not impose one "humanized voice
 | Code-adjacent (commits, PRs, comments) | Read by maintainers | Imperative mood, the reason for the change | Restating what the code does; defer structure to `git-commiter` |
 | General prose | A reader, not a spec | Rhythm, voice, a point of view | Filler, hedging, generic openers and closers |
 
-<div align = "justify">
+</div>
 
 Contractions are on for email and casual prose and off for formal docs, specs, and legal or safety
 text.
@@ -204,8 +204,6 @@ on hiding anything.
 
 Before emitting humanized text, confirm every box.
 
-</div>
-
   - [ ] Meaning, facts, identifiers, and code are unchanged.
   - [ ] Em dashes: banned in `*.md` files; reduced to near zero elsewhere, replaced by a period, comma, parentheses, or colon. Punctuation varies and does not lean on semicolons.
   - [ ] Sentence lengths vary: at least one short sentence and one longer one, and no run of three at about the same length.
@@ -216,14 +214,10 @@ Before emitting humanized text, confirm every box.
   - [ ] Necessary hedges in safety, legal, or technical statements are intact.
   - [ ] Nothing was fabricated to add texture.
 
-<div align = "justify">
-
 If a passage is borderline, score it with the rubric in
 [references/word-swaps.md](references/word-swaps.md) and fix the lowest-scoring signal first.
 
 ## Quick Checklist
-
-</div>
 
   - [ ] Did I read the Non-Negotiables before editing?
   - [ ] Did I leave every fenced, quoted, and identifier token exactly as written?
@@ -232,3 +226,5 @@ If a passage is borderline, score it with the rubric in
   - [ ] Did I vary sentence length and cut the lexical, tonal, and assistant tells?
   - [ ] Did I set the register from the content type rather than impose one voice?
   - [ ] Did I keep protected hedges and avoid fabricating detail?
+
+</div>
