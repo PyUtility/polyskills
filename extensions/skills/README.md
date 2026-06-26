@@ -3,6 +3,8 @@
 # AI Skills Extensions
 
 [![Git Commiter](https://img.shields.io/badge/Git-%20Commiter-003B57?style=plastic&logo=git)](git-commiter/SKILL.md)
+[![God Mode](https://img.shields.io/badge/God-%20Mode-003B57?style=plastic&logo=starship)](god-mode/SKILL.md)
+[![Humanize Text](https://img.shields.io/badge/Humanize-%20Text-003B57?style=plastic&logo=grammarly)](humanize-text/SKILL.md)
 [![Markdown Format](https://img.shields.io/badge/Markdown-%20Format-003B57?style=plastic&logo=markdown)](markdown-format/SKILL.md)
 [![Python Code Format](https://img.shields.io/badge/Python-%20Code%20Format-003B57?style=plastic&logo=python)](python-code-format/SKILL.md)
 [![SQL Code Format](https://img.shields.io/badge/SQL-%20Code%20Format-003B57?style=plastic&logo=postgresql)](sql-code-format/SKILL.md)
