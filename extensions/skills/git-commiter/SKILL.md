@@ -5,9 +5,9 @@ description: >-
   more emoji glyphs (e.g. `✨`, `🐛`, `🛠️`, `💣`, `📝`, `🧪`, `🤖`, `📜`, `⭐️`, `🚧`, `💡`) followed by an optional
   Conventional Commit type/scope and a concise imperative summary. Use this skill whenever the user asks to "create a commit",
   "commit the changes", "stage and commit", "write a commit message", "amend the commit", or any other request that produces a
-  git commit. The skill encodes the exact emoji vocabulary, subject grammar, body structure (`Why` / `What` / `Style` /
-  `Verification`), per-file commit policy, and the mandatory `Co-authored-by: Copilot` trailer observed across the project's
-  history.
+  git commit. The skill encodes the exact emoji vocabulary, subject grammar, free-form body structure (a short paragraph
+  followed by `-` bullet points), per-file commit policy, and a per-model `Co-authored-by` trailer chosen from the model
+  that actually authored the change.
 always_load: true
 ---
 
@@ -31,7 +31,8 @@ not documented here.
   3. Decide the **commit topology**: one focused commit, or one commit per logically independent file.
   4. Pick the correct **emoji + Conventional Commit type** for each commit (see the vocabulary table below).
   5. Write the message to a temp file under `.git/` and commit with `git commit -F <file>` to avoid shell-quoting issues.
-  6. Always append the mandatory `Co-authored-by: Copilot` trailer unless the user **explicitly** opts out.
+  6. Append a `Co-authored-by` trailer that matches the **model used** to author the change (see the Co-author Trailer
+     table); never default to Copilot. Omit the trailer entirely if no AI assistant co-authored the commit.
 
 Never skip reading this skill, even for a one-line change.
 
@@ -92,38 +93,53 @@ Pair emoji freely when both apply: `✨🤖` (new agent file is an automation as
 
 <div align = "justify">
 
-Whenever the diff is more than a trivial typo, write a structured body using the four-section template below. Each section
-heading is followed by an underline of three dashes (matches existing project history). Keep lines wrapped to ~72 columns.
+Whenever the diff is more than a trivial typo, write a free-form body: open with **one short paragraph** describing the
+motivation and the gist of the change, then list the concrete details as **bullet points prefixed with `-`**. Do not use
+labelled sections - there are no `Why` / `What` / `Style` / `Verification` headings. Fold any style conventions applied
+and verification results into the paragraph or the bullets. Keep lines wrapped to ~72 columns.
 
 </div>
 
-```
+```text
 <emoji> <type>(<scope>): <imperative summary>
 
-Why
----
-One short paragraph stating the motivation. What was missing, broken,
-or sub-optimal that justified this change.
+One short paragraph stating the motivation and the gist of the change -
+what was missing, broken, or sub-optimal, and how this commit resolves
+it. Mention applied style conventions and verification inline rather
+than in separate labelled sections.
 
-What
-----
-- Bulleted list of the concrete changes.
-- One bullet per file or per logical unit.
+- One bullet per file or per logical unit of change.
 - Reference symbols / line numbers when useful (`_extract()`, `base.py`).
+- Note project-style conventions applied (PEP-8, reST docstrings).
+- Record the verification command and result, e.g.
+  `python -m unittest discover -v -s polyskills/tests -t .` -> 18 tests, OK.
 
-Style
------
-Note any project-style conventions applied (PEP-8, name : type spacing,
-reST docstrings, markdown-format rules, single-underscore helpers).
-Write "No formatting changes." if none.
-
-Verification
-------------
-The exact command used to verify the change and its result, e.g.
-`python -m unittest discover -v -s polyskills/tests -t .` -> 18 tests, OK.
-
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+Co-authored-by: <Name> <email>
 ```
+
+## Co-author Trailer
+
+<div align = "justify">
+
+Append a single `Co-authored-by` trailer chosen from the **model that actually authored the change** - never hard-code
+Copilot as the default. If a human wrote the commit unaided, omit the trailer entirely. Pick the matching line from the
+table below.
+
+</div>
+
+| Model / Assistant Used | Co-author Trailer to Append |
+| :---: | --- |
+| GitHub Copilot | `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` |
+| Claude (Anthropic) | `Co-authored-by: Claude <noreply@anthropic.com>` |
+| Human author only | *(no trailer)* |
+
+<div align = "justify">
+
+When Claude authored the change you may name the exact model in the trailer, e.g.
+`Co-authored-by: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`. Use exactly one trailer line and never mix
+assistants in a single commit.
+
+</div>
 
 ## Per-File Commit Policy
 
@@ -172,26 +188,19 @@ import os, subprocess
 repo = "<absolute-path-to-repo>"
 msg_path = os.path.join(repo, ".git", "COMMIT_MSG.txt")
 
+# choose the Co-authored-by trailer from the model used (see the table);
+# do not hard-code Copilot. Use Claude's trailer when Claude authored it.
 with open(msg_path, "w", encoding = "utf-8") as f:
     f.write("""✨ feat(scope): one-line imperative summary
 
-Why
----
-...
+One short paragraph stating the motivation and the gist of the change,
+with applied style conventions and verification mentioned inline.
 
-What
-----
-- ...
+- concrete change, one bullet per file or logical unit
+- reference symbols / line numbers when useful (`_extract()`)
+- verification: `python -m unittest discover -v -s polyskills/tests` -> OK
 
-Style
------
-...
-
-Verification
-------------
-...
-
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+Co-authored-by: Claude <noreply@anthropic.com>
 """)
 
 subprocess.run(["git", "add", "<file-1>", "<file-2>"], cwd = repo, check = True)
@@ -237,7 +246,8 @@ The repository ships a pre-commit hook that may **rewrite the commit SHA** and *
   * Never use `git add -A` / `git add .` when several unrelated files are dirty.
   * Never use `git commit -m` for a multi-line / structured body on Windows.
   * Never paste emoji from a thesaurus - use **only** the glyphs in the vocabulary table.
-  * Never omit the `Co-authored-by: Copilot` trailer unless the user explicitly says "no co-author".
+  * Never hard-code `Co-authored-by: Copilot` as the default - the trailer **must** match the model that authored the
+    change, and is omitted entirely when no AI assistant was involved.
   * Never write past-tense or third-person subjects ("added", "fixes") - always imperative ("add", "fix").
   * Never include a trailing period on the subject line.
   * Never exceed 72 characters on the subject; wrap body at ~72.
@@ -257,8 +267,9 @@ Before invoking `git commit`, tick every box:
   * [ ] Subject starts with one or more emoji from the vocabulary table.
   * [ ] Subject uses lowercase imperative mood, no trailing period, ≤ 72 chars.
   * [ ] Conventional Commit `type(scope)` is correct for the change.
-  * [ ] Body uses `Why` / `What` / `Style` / `Verification` sections (for non-trivial diffs).
-  * [ ] `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer is present.
+  * [ ] Body is a short paragraph followed by `-` bullets (for non-trivial diffs) - no `Why` / `What` / `Style` /
+    `Verification` sections.
+  * [ ] `Co-authored-by` trailer matches the model used (not defaulted to Copilot), or is omitted if no AI assistant.
   * [ ] Multi-file commits respect the per-file policy.
   * [ ] Tests / linters were run when the change touches code.
   * [ ] Commit was created via `git commit -F <tempfile>`, not `-m`.
