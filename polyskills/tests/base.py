@@ -10,6 +10,7 @@ that individual modules stay focused on the contract they verify and
 the suite remains DRY.
 """
 
+import os
 import shutil
 import logging
 import tempfile
@@ -23,7 +24,7 @@ import urllib3
 
 from polyskills.remote.sources import GithubManager, SourceControl
 
-# silence verify=False noise + GitHub redirect warnings during runs
+# silence insecure-request + GitHub redirect noise for opt-in live runs
 warnings.filterwarnings("ignore")
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -41,11 +42,21 @@ VERSION        : str      = "master"
 EXPECTED       : Set[str] = {"SKILL.md"} # minimum file expected after extract
 PAGINATION     : int      = 100
 
+# ? live-network tests are opt-in to keep the default test run hermetic
+# ? and offline; set POLYSKILLS_RUN_LIVE=1 to exercise them. Behind a
+# ? TLS-intercepting proxy also set POLYSKILLS_NO_VERIFY=1 so the live
+# ? fixture can reach GitHub without certificate verification.
+_RUN_LIVE : str  = os.environ.get("POLYSKILLS_RUN_LIVE", "")
+_VERIFY   : bool = not os.environ.get("POLYSKILLS_NO_VERIFY")
+
 # ? canonical user-level skill installation root (platform-agnostic via Path.home())
 USER_SKILL_ROOT  : Path   = Path.home() / ".claude" / "skills"
 SKILL_FILENAME   : str    = "SKILL.md"
 
 
+@unittest.skipUnless(
+    _RUN_LIVE, "live-network tests; set POLYSKILLS_RUN_LIVE=1 to run"
+)
 class GithubManagerTestCase(unittest.TestCase):
     """
     A reusable :class:`unittest.TestCase` base that provisions a
@@ -70,7 +81,9 @@ class GithubManagerTestCase(unittest.TestCase):
             f"polyskills.tests.{cls.__name__}"
         )
         cls.manager = GithubManager(
-            control = SourceControl(pagination = PAGINATION)
+            control = SourceControl(
+                pagination = PAGINATION, verify = _VERIFY
+            )
         )
 
 
