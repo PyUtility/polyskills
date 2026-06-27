@@ -50,6 +50,75 @@ under `h3` tags, while the `micro` and "version identifiers" are listed under `h
 
 </details>
 
+### PolySkills v2.1.0 | 2026-06-27
+
+The `v2.1.0` line is a security-hardening and robustness release born out of a full audit of the
+remote download and extraction pipeline. It keeps the `v2.0.0` CLI surface intact while closing the
+supply-chain gaps that let untrusted network traffic and crafted archives influence what landed on
+disk, and it hardens the CI/CD pipeline against tag-mutation attacks.
+
+> [!NOTE]
+> **Behaviour changes (non-breaking API).** TLS verification is now **on by default** (it was
+> effectively disabled before); input validation raises `polyskills.error` exceptions
+> (`ValidationError` still subclasses `ValueError`); and the CLI renders failures as a clean
+> `[ERROR]` message with a non-zero exit instead of a traceback. The sub-command surface and existing
+> call sites are unchanged.
+
+#### ✨ Feature Enhancements
+
+  * **Configurable TLS verification.** Verification defaults to secure (`verify=True`, honouring
+    `REQUESTS_CA_BUNDLE` / `SSL_CERT_FILE`). Two new mutually exclusive flags tune it: `--no-verify`
+    disables it for a trusted network or behind a TLS-intercepting proxy, and `--request-cert` pins
+    the bundled `certifi` authorities for strict verification that fails closed when only an
+    interception certificate is available.
+  * **Domain exception hierarchy.** `polyskills.error` now defines `PolyskillsError` with
+    `ValidationError`, `RemoteError`, and `ExtractionError`, so callers can catch a specific failure
+    mode while a single `except PolyskillsError` still covers them all.
+  * **Identifiable client.** Every GitHub request now advertises a `polyskills/<version>`
+    `User-Agent` header, and request timeouts are centralised as named constants.
+
+#### 🛠️ Security Hardening & Fixes
+
+  * **TLS no longer disabled.** The hard-coded `verify=False` on every remote request — a
+    man-in-the-middle exposure — is removed in favour of the configurable policy above.
+  * **Archive path-traversal guard.** Each tarball member is resolved against the destination subtree
+    and rejected with `ExtractionError` if it escapes; non file/dir members (symlinks, devices) are
+    skipped on purpose.
+  * **Size caps.** The compressed download and the cumulative uncompressed size are bounded to defang
+    disk-exhaustion and decompression-bomb archives.
+  * **Validation hardened.** Argument checks raise exceptions instead of `assert` (which `python -O`
+    strips); URL path / ref segments are percent-encoded against query injection; and tag pagination
+    is capped to stop an endless `next`-link chain.
+  * **Clean CLI errors.** `main()` funnels expected failures into a concise `[ERROR]` message and a
+    non-zero exit; set `POLYSKILLS_DEBUG` to re-raise the full traceback.
+  * **Version & dependencies.** `__version__` is bumped to `v2.1.0` and the unused `packaging` runtime
+    dependency is dropped.
+
+#### 🧪 Testing & CI
+
+  * **Hermetic-by-default suite.** The default `unittest discover` run is now fully offline; the
+    live-network tests are opt-in via `POLYSKILLS_RUN_LIVE=1` (with `POLYSKILLS_NO_VERIFY=1` for a
+    proxied network).
+  * **Security regression module (`test_security.py`).** Mocked-transport tests lock in TLS
+    forwarding, path-traversal rejection, the download / extraction size caps, the pagination cap,
+    and verify-flag resolution.
+  * **Supply-chain-hardened workflows.** Every GitHub Action is pinned to a commit SHA (the mutable
+    tag kept as a comment), a new `security.yml` runs `bandit` and `pip-audit`, and least-privilege
+    `permissions` are declared on the linting and release-build jobs.
+
+#### 📦 Installation
+
+```shell
+$ pip install "polyskills==2.1.0"
+
+$ polyskills list https://github.com/<owner>/<repo> skills --source extensions/skills
+$ polyskills manager https://github.com/<owner>/<repo> \
+    --name sql-code-format \
+    --destination ~/.claude/skills/sql-code-format \
+    --request-cert \
+    skills
+```
+
 ### PolySkills v2.0.0 | 2026-06-07
 
 The `v2.0.0` line redesigns `polyskills` from a "skills-only fetcher" into a portable, multi-library
