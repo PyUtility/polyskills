@@ -45,6 +45,10 @@ from polyskills.database.paths import (
     DATABASE_FILENAME, ENVIRON_DB_PATH, POLYSKILLS_HOME,
     default_database_path
 )
+from polyskills.database.tracker import (
+    get_installation, get_invocation_context, list_installations,
+    record_fetch, reset_cache_for_tests, set_invocation_context
+)
 
 __all__ = [
     "SQLALCHEMY_AVAILABLE",
@@ -52,4 +56,10 @@ __all__ = [
     "ENVIRON_DB_PATH",
     "POLYSKILLS_HOME",
     "default_database_path",
+    "get_installation",
+    "get_invocation_context",
+    "list_installations",
+    "record_fetch",
+    "reset_cache_for_tests",
+    "set_invocation_context",
 ]
