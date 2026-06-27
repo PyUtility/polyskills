@@ -183,6 +183,8 @@ def _get_or_create(
     :returns: The existing or newly created mapped instance.
     """
 
+    from sqlalchemy.exc import IntegrityError
+
     instance = session.query(model).filter_by(**keys).one_or_none()
     if instance is not None:
         return instance
@@ -192,8 +194,17 @@ def _get_or_create(
         params.update(defaults)
 
     instance = model(**params)
-    session.add(instance)
-    session.flush()
+    try:
+        with session.begin_nested():
+            session.add(instance)
+            session.flush()
+    except IntegrityError:
+        # ? a concurrent writer inserted the same natural key between the
+        # ? lookup and the flush; the SAVEPOINT rolls back only this
+        # ? insert, leaving the surrounding transaction intact, then the
+        # ? now-committed row is re-fetched.
+        instance = session.query(model).filter_by(**keys).one()
+
     return instance
 
 
@@ -218,7 +229,7 @@ def _resolve_environment(session : Any) -> Any:
     try:
         from polyskills import __version__ as polyskills_version
     except Exception:  # pragma: no cover - defensive guard
-        polyskills_version = None
+        polyskills_version = "unknown"
 
     return _get_or_create(
         session, Environment,
@@ -365,11 +376,8 @@ def record_fetch(
             )
             installation = _get_or_create(
                 session, Installation,
-                defaults = {"extension_id": extension.id},
-                install_path = install_path,
+                extension_id = extension.id, install_path = install_path,
             )
-            if installation.extension_id != extension.id:
-                installation.extension_id = extension.id
 
             environment = _resolve_environment(session)
 

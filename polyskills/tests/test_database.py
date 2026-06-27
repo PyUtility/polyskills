@@ -289,6 +289,31 @@ class TestTracker(unittest.TestCase):
             _engine.dispose()
 
 
+    def test_distinct_extensions_same_path_not_conflated(self) -> None:
+        """
+        Two different extensions fetched into the same install path must
+        yield two installations with independent histories, never one
+        installation silently relabelled to the second extension.
+        """
+
+        self._record(
+            name = "skill-a", install_path = "/shared/path",
+            resolved_commit_sha = "aaa"
+        )
+        self._record(
+            name = "skill-b", install_path = "/shared/path",
+            resolved_commit_sha = "bbb"
+        )
+
+        rows = db.list_installations(database_path = self.db)
+        shared = [r for r in rows if r["install_path"] == "/shared/path"]
+        self.assertEqual(
+            sorted(r["name"] for r in shared), ["skill-a", "skill-b"]
+        )
+        for row in shared:
+            self.assertEqual(row["fetch_count"], 1)
+
+
     def test_derived_first_last_and_latest_sha(self) -> None:
         """
         The read summary must derive first-fetched, last-updated, and

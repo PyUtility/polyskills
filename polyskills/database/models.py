@@ -56,18 +56,20 @@ from sqlalchemy.orm import (
 
 def _utc_now() -> datetime:
     """
-    Return the current time as a timezone-aware UTC
-    :class:`datetime.datetime`.
+    Return the current UTC time as a naive :class:`datetime.datetime`.
 
-    The helper is used as the default factory for
-    :attr:`FetchEvent.occurred_at` so every audit row is stamped in a
-    single, unambiguous time zone regardless of the host locale.
+    The value is the current instant in UTC with its ``tzinfo`` removed.
+    SQLite has no timezone-aware storage, so a stored timestamp always
+    reads back naive; producing a naive UTC value here keeps a freshly
+    recorded event and a reloaded event directly comparable and
+    sortable. Every audit timestamp in the database is therefore naive
+    UTC by convention.
 
     :rtype:   datetime.datetime
-    :returns: The current instant in the UTC time zone.
+    :returns: The current UTC instant as a naive ``datetime``.
     """
 
-    return datetime.now(timezone.utc)
+    return datetime.now(timezone.utc).replace(tzinfo = None)
 
 
 class Base(DeclarativeBase):
@@ -234,10 +236,11 @@ class Installation(Base):
     A physical installation of an extension at one absolute path on
     the local filesystem.
 
-    The absolute destination path is the natural key and is enforced
-    unique so repeated fetches into the same directory append a new
-    :class:`FetchEvent` to the existing installation rather than
-    creating a duplicate location.
+    The natural key is the pair ``(extension_id, install_path)``: the
+    same extension re-fetched into the same directory reuses its
+    installation row (appending a new :class:`FetchEvent`), while a
+    different extension fetched into the same path gets its own
+    installation so the two histories are never conflated.
 
     :type  extension_id: int
     :param extension_id: Foreign key into :class:`Extension`.
@@ -248,13 +251,19 @@ class Installation(Base):
     """
 
     __tablename__ = "installations"
+    __table_args__ = (
+        UniqueConstraint(
+            "extension_id", "install_path",
+            name = "uq_installation_extension_path"
+        ),
+    )
 
     id           : Mapped[int] = mapped_column(primary_key = True)
     extension_id : Mapped[int] = mapped_column(
         ForeignKey("extensions.id"), nullable = False, index = True
     )
     install_path : Mapped[str] = mapped_column(
-        Text, nullable = False, unique = True
+        Text, nullable = False, index = True
     )
 
     extension : Mapped["Extension"] = relationship(
