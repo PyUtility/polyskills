@@ -35,6 +35,7 @@ classifiers = [
 
 dependencies = [
     "requests>=2.31",
+    "sqlalchemy>=2.0",
 ]
 
 [project.scripts]
