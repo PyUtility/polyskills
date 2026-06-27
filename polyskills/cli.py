@@ -20,10 +20,11 @@ The CLI tool is developed to manage LLM essential functions - like
 
 import os
 import sys
+import time
 import argparse
 
 from pathlib import Path
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 
 def _expandUserPath(value : Union[str, Path]) -> Path:
@@ -59,6 +60,10 @@ from polyskills.apps.tools import SupportedTools
 from polyskills.remote.sources import (
     GithubManager, SourceControl, SourceManager, ValidSources
 )
+from polyskills.database import (
+    default_database_path, get_installation, list_installations,
+    record_fetch, set_invocation_context
+)
 
 # ? registry mapping each supported remote enumeration to its concrete
 # ? :class:`SourceManager` factory; extending the framework with a new
@@ -66,6 +71,42 @@ from polyskills.remote.sources import (
 _SOURCE_MANAGERS = {
     ValidSources.GITHUB : GithubManager,
 }
+
+
+def _summariseDestination(destination : Path) -> Tuple[int, int]:
+    """
+    Walk ``destination`` and return ``(file_count, total_bytes)`` so a
+    successful fetch can be recorded with its on-disk footprint.
+
+    The helper is best-effort: any :class:`OSError` raised while
+    iterating the tree is swallowed and the partial counts gathered so
+    far are returned, preserving the "tracking is never fatal"
+    contract of the command-line interface.
+
+    :type  destination: pathlib.Path
+    :param destination: Directory whose files are counted and sized.
+
+    :rtype:   Tuple[int, int]
+    :returns: A two-tuple ``(file_count, total_bytes)`` of the regular
+        files found beneath ``destination``.
+    """
+
+    file_count = 0
+    total_bytes = 0
+
+    try:
+        for path in Path(destination).rglob("*"):
+            if not path.is_file():
+                continue
+            file_count += 1
+            try:
+                total_bytes += path.stat().st_size
+            except OSError:
+                continue
+    except OSError:
+        pass
+
+    return file_count, total_bytes
 
 
 def buildParser() -> argparse.ArgumentParser:
@@ -194,6 +235,36 @@ def buildParser() -> argparse.ArgumentParser:
         ])
     )
 
+    # ? Creating Subparsers:: RECORDS - Inspect the Tracking Database
+    records = subparser.add_parser(
+        "records", help = (
+            "Inspect the local tracking database "
+            "(~/.polyskills/records.db) that records every extension "
+            "fetched on this system - where it is installed, the "
+            "resolved commit SHA, and when it was first fetched and "
+            "last updated. Without '--name' every tracked installation "
+            "is listed; with '--name' the full fetch history of the "
+            "matching extension is shown. This command is read-only "
+            "and never creates the database."
+        )
+    )
+
+    records.add_argument(
+        "-n", "--name", type = str, default = None, metavar = "", help = (
+            "Show the detailed fetch history for the extension with "
+            "this leaf name (e.g., 'sql-code-format') instead of the "
+            "summary listing of every tracked installation."
+        )
+    )
+
+    records.add_argument(
+        "--db", type = str, default = None, metavar = "", help = (
+            "Path to the tracking database to read, defaults to "
+            "'~/.polyskills/records.db'. Primarily an advanced or "
+            "testing affordance."
+        )
+    )
+
     # shared remote arguments across sub-parsers
     remoteControls = buildRemoteControls()
 
@@ -278,6 +349,18 @@ def buildParser() -> argparse.ArgumentParser:
             "placed, this defaults to the local directory into their "
             "respective directories like ./skills, ./agents, etc. "
             "as per the standards."
+        )
+    )
+
+    manager.add_argument(
+        "--no-tracking", action = "store_true", default = False,
+        help = (
+            "Disable recording this installation in the local tracking "
+            "database (~/.polyskills/records.db). By default every "
+            "fetch - successful or failed - is tracked so the install "
+            "location, resolved commit SHA, and first-fetched / "
+            "last-updated timestamps are retained; pass this flag to "
+            "skip the database write entirely for this invocation."
         )
     )
 
@@ -394,6 +477,218 @@ def listExtensions(
     )
 
 
+def _recordFetch(
+    args : argparse.Namespace, control : SourceControl,
+    status : str, error : Optional[str], duration_ms : int
+) -> None:
+    """
+    Record one ``manager`` fetch attempt in the tracking database.
+
+    The helper resolves the remote slug, the provider metadata, the
+    resolved commit SHA, and the on-disk footprint, then delegates to
+    :func:`polyskills.database.record_fetch`. It is strictly
+    best-effort: every step is wrapped so a tracking failure - a
+    network error while resolving the SHA, an unreadable destination,
+    or a database fault - never propagates into the CLI exit path.
+
+    :type  args: argparse.Namespace
+    :param args: Parsed ``manager`` namespace carrying the remote,
+        name, library, source, destination, version, and exists policy.
+
+    :type  control: SourceControl
+    :param control: Source control built from ``--pagination`` and
+        ``--token``, reused to resolve the provider and commit SHA.
+
+    :type  status: str
+    :param status: Either ``"success"`` or ``"failed"``.
+
+    :type  error: Optional[str]
+    :param error: Error description recorded on a failed attempt.
+
+    :type  duration_ms: int
+    :param duration_ms: Wall-clock duration of the attempt in
+        milliseconds.
+
+    :rtype:   None
+    :returns: Nothing - the row is written as a best-effort side
+        effect; failures are swallowed.
+    """
+
+    try:
+        manager = _resolveManager(remote = args.remote, control = control)
+        owner, repository = manager.getSlug(remote = args.remote)
+
+        commit_sha  : Optional[str] = None
+        file_count  : Optional[int] = None
+        total_bytes : Optional[int] = None
+
+        if status == "success":
+            commit_sha = manager.resolveCommit(args.remote, args.version)
+            file_count, total_bytes = _summariseDestination(
+                args.destination
+            )
+
+        action = "fetch" if args.exists == "fail" else args.exists
+
+        record_fetch(
+            source_name = manager.source.name,
+            source_base_url = manager.source.value,
+            owner = owner, repository = repository,
+            remote_url = args.remote,
+            library = args.library, name = args.name,
+            source_dir = Path(str(args.source)).as_posix(),
+            install_path = str(Path(args.destination).resolve()),
+            requested_version = args.version,
+            action = action, status = status,
+            resolved_commit_sha = commit_sha,
+            file_count = file_count, total_bytes = total_bytes,
+            duration_ms = duration_ms, error = error,
+        )
+    except Exception:
+        # ! tracking is strictly best-effort; a failure here must never
+        # ! break the install path or alter the CLI exit status.
+        pass
+
+
+def _formatTimestamp(value : Any) -> str:
+    """
+    Render a stored timestamp for display, or ``n/a`` when absent.
+
+    :type  value: Any
+    :param value: A :class:`datetime.datetime` (or ``None``) read back
+        from the tracking database.
+
+    :rtype:   str
+    :returns: A ``YYYY-MM-DD HH:MM:SS`` string, ``n/a`` for ``None``,
+        or the raw string form for any unexpected value.
+    """
+
+    if value is None:
+        return "n/a"
+    try:
+        return value.strftime("%Y-%m-%d %H:%M:%S")
+    except (AttributeError, ValueError):
+        return str(value)
+
+
+def _formatRecordSummary(index : int, row : Dict[str, Any]) -> str:
+    """
+    Render one installation summary block for the ``records`` listing.
+
+    :type  index: int
+    :param index: Zero-based position used to build the display number.
+
+    :type  row: Dict[str, Any]
+    :param row: One summary mapping from
+        :func:`polyskills.database.list_installations`.
+
+    :rtype:   str
+    :returns: A multi-line, indented summary block for the
+        installation.
+    """
+
+    number = str(index + 1).zfill(2)
+    sha = row.get("resolved_commit_sha") or "n/a"
+
+    return "\n".join([
+        f"  >> {number}. {row['name']}  [{row['library']}]",
+        f"         remote  : {row['remote_url']} ({row['source_dir']})",
+        f"         path    : {row['install_path']}",
+        f"         commit  : {sha} (requested {row['requested_version']})",
+        f"         history : first {_formatTimestamp(row['first_fetched_at'])}"
+        f" | last {_formatTimestamp(row['last_updated_at'])}"
+        f" | {row['fetch_count']} fetch(es), last {row['last_status']}",
+    ])
+
+
+def _formatRecordDetail(detail : Dict[str, Any]) -> str:
+    """
+    Render a detailed installation block with its full event history.
+
+    :type  detail: Dict[str, Any]
+    :param detail: One detail mapping from
+        :func:`polyskills.database.get_installation`, including its
+        chronological ``events`` list.
+
+    :rtype:   str
+    :returns: A multi-line block describing the installation and every
+        recorded fetch attempt against it.
+    """
+
+    lines = [
+        f">> {detail['name']} [{detail['library']}]",
+        f"   remote   : {detail['remote_url']} ({detail['source_dir']})",
+        f"   path     : {detail['install_path']}",
+        f"   commit   : {detail.get('resolved_commit_sha') or 'n/a'}",
+        f"   first    : {_formatTimestamp(detail['first_fetched_at'])}",
+        f"   last     : {_formatTimestamp(detail['last_updated_at'])}",
+        f"   events ({len(detail['events'])}):",
+    ]
+
+    for event in detail["events"]:
+        sha = event.get("resolved_commit_sha") or "n/a"
+        lines.append(
+            f"     - {_formatTimestamp(event['occurred_at'])}"
+            f" {event['status']:7} {event['action']:9}"
+            f" {event['requested_version']} -> {sha}"
+            f" ({event['invoked_via']})"
+        )
+        if event.get("error"):
+            lines.append(f"       error: {event['error']}")
+
+    return "\n".join(lines)
+
+
+def _showRecords(name : Optional[str], db : Optional[str]) -> None:
+    """
+    Render the contents of the tracking database to the terminal.
+
+    Without ``name`` a per-installation summary is printed; with
+    ``name`` the full chronological fetch history of every matching
+    installation is shown. The command is read-only: when the database
+    file does not exist it reports the fact and returns without
+    creating it.
+
+    :type  name: Optional[str]
+    :param name: Extension leaf name to detail, or ``None`` to list
+        every tracked installation.
+
+    :type  db: Optional[str]
+    :param db: Explicit database path, or ``None`` for the canonical
+        ``~/.polyskills/records.db``.
+
+    :rtype:   None
+    :returns: Nothing - the records are printed as a side effect.
+    """
+
+    database_path = _expandUserPath(db) if db else default_database_path()
+
+    if not database_path.exists():
+        print(f"No tracking database found at `{database_path}`.")
+        print("Fetch an extension with 'polyskills manager ...' first.")
+        return None
+
+    if name:
+        details = get_installation(name, database_path = database_path)
+        if not details:
+            print(f"No tracked installation found for `{name}`.")
+            return None
+
+        for detail in details:
+            print(_formatRecordDetail(detail))
+        return None
+
+    rows = list_installations(database_path = database_path)
+    if not rows:
+        print(f"No tracked installations in `{database_path}`.")
+        return None
+
+    print(f"Tracked installations ({len(rows)}):")
+    for idx, row in enumerate(rows):
+        print(_formatRecordSummary(idx, row))
+    return None
+
+
 def main() -> None:
     """
     Entry point for CLI tool for :mod:`polyskills` that parses the
@@ -439,6 +734,12 @@ def main() -> None:
             print(f"\t>> {str(idx + 1).zfill(2)}. {name}")
         return None
 
+    # ? dispatch the 'records' subcommand: read-only inspection of the
+    # ? local tracking database; never touches a remote source.
+    if args.command == "records":
+        _showRecords(name = args.name, db = args.db)
+        return None
+
     # ? set default source, destination directory based on library
     # ? expanding ``~`` and environment variables here lets users
     # ? supply familiar shell-style paths like
@@ -456,12 +757,35 @@ def main() -> None:
         pagination = args.pagination, token = args.token
     )
 
-    get(
-        remote = args.remote, name = args.name,
-        source = Path(args.source), destination = args.destination,
-        version = args.version, exists = args.exists,
-        control = control,
-    )
+    # ? record every fetch in the local tracking database unless the
+    # ? caller opted out with ``--no-tracking``; the recording is
+    # ? wrapped so a database fault never alters the fetch outcome or
+    # ? the process exit status.
+    tracking = not getattr(args, "no_tracking", False)
+    if tracking:
+        set_invocation_context("cli")
+
+    started = time.monotonic()
+    try:
+        get(
+            remote = args.remote, name = args.name,
+            source = Path(args.source), destination = args.destination,
+            version = args.version, exists = args.exists,
+            control = control,
+        )
+    except Exception as exc:
+        if tracking:
+            _recordFetch(
+                args, control, status = "failed", error = repr(exc),
+                duration_ms = int((time.monotonic() - started) * 1000),
+            )
+        raise
+    else:
+        if tracking:
+            _recordFetch(
+                args, control, status = "success", error = None,
+                duration_ms = int((time.monotonic() - started) * 1000),
+            )
 
     return None
 
