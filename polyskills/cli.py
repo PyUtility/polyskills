@@ -468,13 +468,19 @@ def listExtensions(
     )
 
 
-def main() -> None:
+def _dispatch(args : argparse.Namespace) -> None:
     """
-    Entry point for CLI tool for :mod:`polyskills` that parses the
-    command line arguments using :mod:`argparse` module.
-    """
+    Execute the parsed CLI command.
 
-    args = buildParser().parse_args()
+    Separated from :func:`main` so that every transport or filesystem
+    error raised while contacting a remote bubbles up to a single
+    top-level handler that renders a concise message instead of a raw
+    traceback. Set ``POLYSKILLS_DEBUG`` in the environment to re-raise
+    the original exception for debugging.
+
+    :type  args: argparse.Namespace
+    :param args: Parsed command line arguments from :func:`buildParser`.
+    """
 
     # ? terminal commands: 'sources', 'tools' - print and exit early
     # ? these subparsers attach a ``func`` default; manager does not.
@@ -553,6 +559,31 @@ def main() -> None:
     )
 
     return None
+
+
+def main() -> None:
+    """
+    Entry point for the :mod:`polyskills` CLI. Parses the command line
+    arguments and dispatches to :func:`_dispatch`, funnelling expected
+    runtime failures into a clean, non-zero exit rather than a raw
+    traceback. Set ``POLYSKILLS_DEBUG`` to surface the full traceback.
+    """
+
+    args = buildParser().parse_args()
+
+    try:
+        return _dispatch(args)
+    except KeyboardInterrupt:
+        print(
+            "\n[ABORTED] Interrupted by the user.", file = sys.stderr
+        )
+        raise SystemExit(130)
+    except Exception as error:
+        if os.environ.get("POLYSKILLS_DEBUG"):
+            raise
+        print(f"[ERROR] {error}", file = sys.stderr)
+        raise SystemExit(1)
+
 
 if __name__ == "__main__":
     sys.exit(main())

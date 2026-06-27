@@ -30,6 +30,7 @@ import requests
 
 from enum import Enum
 from pathlib import Path
+from urllib.parse import quote
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -39,6 +40,10 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 _CHUNK_SIZE : int = 1 << 14
 _MAX_ARCHIVE_BYTES : int = 100 * (1 << 20)
 _MAX_EXTRACT_BYTES : int = 500 * (1 << 20)
+
+# ? upper bound on REST pagination so a misbehaving / hostile server
+# ? cannot keep the client looping over an endless `next` link chain
+_MAX_PAGES : int = 100
 
 
 class ValidSources(Enum):
@@ -460,7 +465,15 @@ class GithubManager(SourceManager):
 
         tags : List[str] = []
 
+        pages = 0
         while remote_url:
+            if pages >= _MAX_PAGES:
+                raise ValueError(
+                    f"Tag pagination exceeded the {_MAX_PAGES} page "
+                    "safety limit."
+                )
+            pages += 1
+
             response = requests.get(
                 remote_url, verify = self.control.verify,
                 headers = self.headers, timeout = timeout
@@ -473,7 +486,7 @@ class GithubManager(SourceManager):
                 tags.append(item["name"])
 
             remote_url = response.links.get("next", {}).get("url")
-        
+
         return tags
 
 
@@ -506,7 +519,11 @@ class GithubManager(SourceManager):
         uri = (
             "https://api.github.com/repos/"
             "{owner}/{repository}/tarball/{tag}"
-        ).format(owner = owner, repository = repository, tag = version)
+        ).format(
+            owner = quote(owner, safe = ""),
+            repository = quote(repository, safe = ""),
+            tag = quote(str(version), safe = "/")
+        )
 
         destination = Path(destination)
         if destination.exists() and destination.is_dir() \
@@ -644,8 +661,10 @@ class GithubManager(SourceManager):
             "https://api.github.com/repos/"
             "{owner}/{repository}/contents/{path}?ref={ref}"
         ).format(
-            owner = owner, repository = repository,
-            path = sub, ref = version
+            owner = quote(owner, safe = ""),
+            repository = quote(repository, safe = ""),
+            path = quote(sub, safe = "/"),
+            ref = quote(str(version), safe = "")
         )
 
         response = requests.get(
