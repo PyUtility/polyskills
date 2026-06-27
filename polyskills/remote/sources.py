@@ -271,6 +271,34 @@ class SourceManager(abc.ABC):
         return methods[mode]() # return the underlying assets
 
 
+    def resolveCommit(
+        self, remote : str, version : str = "master", **kwargs
+    ) -> Optional[str]:
+        """
+        Resolve ``version`` (a tag, branch, or SHA) to the concrete
+        commit SHA it points at on the remote.
+
+        The base implementation returns ``None``; providers that can
+        cheaply resolve a reference to a commit SHA override this so
+        the tracking database can record the exact commit a fetch
+        landed on. Returning ``None`` is always acceptable and simply
+        leaves the recorded SHA empty - resolution is never required
+        for a fetch to succeed.
+
+        :type  remote: str
+        :param remote: Remote URL forwarded to the provider.
+
+        :type  version: str
+        :param version: The tag, branch, or SHA to resolve.
+
+        :rtype:   Optional[str]
+        :returns: The resolved commit SHA, or ``None`` when it cannot
+            be determined.
+        """
+
+        return None
+
+
     @abc.abstractmethod
     def _getTags(
         self, remote : str, prefix : Optional[str] = None
@@ -446,8 +474,61 @@ class GithubManager(SourceManager):
                 tags.append(item["name"])
 
             remote_url = response.links.get("next", {}).get("url")
-        
+
         return tags
+
+
+    def resolveCommit(
+        self, remote : str, version : str = "master", **kwargs
+    ) -> Optional[str]:
+        """
+        Resolve ``version`` to a commit SHA using the GitHub commits
+        REST endpoint ``GET /repos/{owner}/{repository}/commits/{ref}``.
+
+        The request sets the ``Accept: application/vnd.github.sha``
+        media type so the endpoint returns the 40-character SHA as a
+        plain-text body instead of the full commit payload, keeping
+        the lookup cheap. The call is best-effort: any transport or
+        HTTP error yields ``None`` so a tracking lookup never raises
+        into the fetch path.
+
+        :type  remote: str
+        :param remote: GitHub remote URL.
+
+        :type  version: str
+        :param version: Tag, branch, or SHA to resolve, defaults to
+            ``master``.
+
+        :rtype:   Optional[str]
+        :returns: The resolved commit SHA, or ``None`` on any failure.
+        """
+
+        timeout = kwargs.get("timeout", 30)
+
+        try:
+            owner, repository = self.getSlug(remote = remote)
+        except ValueError:
+            return None
+
+        uri = (
+            "https://api.github.com/repos/"
+            "{owner}/{repository}/commits/{ref}"
+        ).format(owner = owner, repository = repository, ref = version)
+
+        headers = dict(self.headers)
+        headers["accept"] = "application/vnd.github.sha"
+
+        try:
+            response = requests.get(
+                uri, verify = False,
+                headers = headers, timeout = timeout
+            )
+            response.raise_for_status()
+        except requests.RequestException:
+            return None
+
+        sha = response.text.strip()
+        return sha or None
 
 
     def _getExtensions(
