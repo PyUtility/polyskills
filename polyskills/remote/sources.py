@@ -31,7 +31,15 @@ import requests
 from enum import Enum
 from pathlib import Path
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
+# ! security limits guarding the remote download / extraction pipeline
+# ? the compressed download is capped to bound disk usage, and the
+# ? cumulative uncompressed size is capped to defang gzip / tar bombs
+_CHUNK_SIZE : int = 1 << 14
+_MAX_ARCHIVE_BYTES : int = 100 * (1 << 20)
+_MAX_EXTRACT_BYTES : int = 500 * (1 << 20)
+
 
 class ValidSources(Enum):
     GITHUB = "https://www.github.com/"
@@ -54,6 +62,14 @@ class SourceControl:
     :param token: A authorization token to access the remote URL, this
         value is discouraged to be used in a production system.
 
+    :type  verify: Union[bool, str]
+    :param verify: TLS verification forwarded verbatim to every
+        :func:`requests.get` call. ``True`` (default) uses the standard
+        trust store and honours the ``REQUESTS_CA_BUNDLE`` /
+        ``SSL_CERT_FILE`` environment overrides, a string pins a CA
+        bundle path, and ``False`` disables verification entirely
+        (discouraged, exposed via the ``--no-verify`` CLI flag).
+
     Each parameter should be available as a CLI command for dynamic
     control which sets the data class defaults during runtime.
     """
@@ -62,6 +78,10 @@ class SourceControl:
 
     # ? Token Attribute: Useful only in testing environment
     token : Optional[str] = None
+
+    # ? TLS verification policy forwarded to every remote request;
+    # ? defaults to secure verification, see the param docstring above
+    verify : Union[bool, str] = True
 
 
 class SourceManager(abc.ABC):
@@ -242,19 +262,26 @@ class SourceManager(abc.ABC):
         # always use lower case naming for modes; in-built control
         mode = mode.lower()
         supported = ["tags", "extensions", "list"]
-        assert mode in supported, \
-            f"Mode = `{mode}` is not in {supported}"
+        if mode not in supported:
+            raise ValueError(f"Mode = `{mode}` is not in {supported}.")
 
         # ! validate that positional required arguments are available
         # only enforced for the ``extensions`` mode where they are used
+        # ! raised explicitly (not ``assert``) so the checks survive a
+        # ! ``python -O`` optimised run where assertions are stripped
         if mode == "extensions":
-            assert name is not None, "Extension name cannot be null."
-            assert library is not None, \
-                f"Library cannot be null, supported are {supported}"
+            if name is None:
+                raise ValueError("Extension name cannot be null.")
+            if library is None:
+                raise ValueError(
+                    f"Library cannot be null, supported are {supported}."
+                )
 
         if mode == "list":
-            assert library is not None, \
-                f"Library cannot be null, supported are {supported}"
+            if library is None:
+                raise ValueError(
+                    f"Library cannot be null, supported are {supported}."
+                )
 
         # lazy dispatch: only the requested branch is invoked
         methods : Dict[str, Callable[[], Any]] = dict(
@@ -435,7 +462,7 @@ class GithubManager(SourceManager):
 
         while remote_url:
             response = requests.get(
-                remote_url, verify = False,
+                remote_url, verify = self.control.verify,
                 headers = self.headers, timeout = timeout
             )
             response.raise_for_status()
@@ -469,8 +496,11 @@ class GithubManager(SourceManager):
             to ``fail``.
         """
 
-        assert exists in ("fail", "overwrite", "merge"), \
-            f"exists = `{exists}` not in ['fail', 'overwrite', 'merge']"
+        if exists not in ("fail", "overwrite", "merge"):
+            raise ValueError(
+                f"exists = `{exists}` not in "
+                "['fail', 'overwrite', 'merge']."
+            )
 
         owner, repository = self.getSlug(remote = remote)
         uri = (
@@ -503,12 +533,23 @@ class GithubManager(SourceManager):
             try:
                 with requests.get(
                     uri, headers = self.headers, stream = True,
-                    verify = False, timeout = 60, allow_redirects = True
+                    verify = self.control.verify, timeout = 60,
+                    allow_redirects = True
                 ) as response:
                     response.raise_for_status()
-                    for chunk in response.iter_content(chunk_size = 1 << 14):
-                        if chunk:
-                            handle.write(chunk)
+                    downloaded = 0
+                    for chunk in response.iter_content(
+                        chunk_size = _CHUNK_SIZE
+                    ):
+                        if not chunk:
+                            continue
+                        downloaded += len(chunk)
+                        if downloaded > _MAX_ARCHIVE_BYTES:
+                            raise ValueError(
+                                "Download exceeds the safety limit of "
+                                f"{_MAX_ARCHIVE_BYTES} bytes."
+                            )
+                        handle.write(chunk)
                 handle.flush()
                 handle.close()
 
@@ -522,7 +563,12 @@ class GithubManager(SourceManager):
                     root = members[0].name.split("/", 1)[0]
                     prefix = f"{root}/{target}/"
 
+                    # ! resolve the destination once so every member can
+                    # ! be verified to stay inside this subtree below
+                    safe_root = destination.resolve()
+
                     found = False
+                    extracted_bytes = 0
                     for member in members:
                         if not member.name.startswith(prefix):
                             continue
@@ -532,9 +578,26 @@ class GithubManager(SourceManager):
                             continue
 
                         out_path = destination / relative
+
+                        # ! defend against path traversal - a crafted
+                        # ! member may carry '..' segments that escape
+                        resolved = (safe_root / relative).resolve()
+                        if resolved != safe_root \
+                                and safe_root not in resolved.parents:
+                            raise ValueError(
+                                f"Unsafe archive member `{member.name}` "
+                                "escapes the destination directory."
+                            )
+
                         if member.isdir():
                             out_path.mkdir(parents = True, exist_ok = True)
                         elif member.isfile():
+                            extracted_bytes += max(member.size, 0)
+                            if extracted_bytes > _MAX_EXTRACT_BYTES:
+                                raise ValueError(
+                                    "Extraction exceeds the safety limit "
+                                    f"of {_MAX_EXTRACT_BYTES} bytes."
+                                )
                             out_path.parent.mkdir(
                                 parents = True, exist_ok = True
                             )
@@ -544,6 +607,8 @@ class GithubManager(SourceManager):
                             with extracted as src_fp, \
                                     open(out_path, "wb") as dst_fp:
                                 shutil.copyfileobj(src_fp, dst_fp)
+                        # ? symlink / hardlink / device / fifo members
+                        # ? are neither dir nor file - skipped on purpose
 
                     if not found:
                         raise FileNotFoundError(
@@ -584,7 +649,7 @@ class GithubManager(SourceManager):
         )
 
         response = requests.get(
-            uri, verify = False,
+            uri, verify = self.control.verify,
             headers = self.headers, timeout = timeout
         )
         response.raise_for_status()

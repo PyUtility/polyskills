@@ -55,6 +55,59 @@ def _expandUserPath(value : Union[str, Path]) -> Path:
     expanded = os.path.expandvars(os.fspath(value))
     return Path(expanded).expanduser()
 
+
+def _resolveVerify(
+    no_verify : bool = False, request_cert : bool = False
+) -> Union[bool, str]:
+    """
+    Resolve the ``verify`` value forwarded to every remote request
+    from the mutually exclusive ``--no-verify`` / ``--request-cert``
+    command line flags.
+
+    The default (neither flag) returns ``True`` so :mod:`requests`
+    uses its standard trust store while still honouring the
+    ``REQUESTS_CA_BUNDLE`` / ``SSL_CERT_FILE`` environment overrides
+    that are common behind a corporate proxy. ``--no-verify`` returns
+    ``False`` to disable verification, while ``--request-cert`` pins
+    the bundled :mod:`certifi` authorities for strict verification
+    that deliberately fails when only an intercepting certificate is
+    available.
+
+    :type  no_verify: bool
+    :param no_verify: Disable verification entirely when ``True``.
+
+    :type  request_cert: bool
+    :param request_cert: Pin the bundled trust store when ``True``.
+
+    :raises ValueError: If both flags are requested together, or the
+        :mod:`certifi` bundle cannot be located for strict mode.
+
+    :rtype:   Union[bool, str]
+    :returns: ``True`` / ``False`` or a path to a CA bundle, suitable
+        for the ``verify`` keyword of :func:`requests.get`.
+    """
+
+    if no_verify and request_cert:
+        raise ValueError(
+            "Cannot use --no-verify together with --request-cert."
+        )
+
+    if no_verify:
+        return False
+
+    if request_cert:
+        try:
+            import certifi
+        except ImportError as error:
+            raise ValueError(
+                "Strict --request-cert mode needs the 'certifi' "
+                "package, which could not be imported."
+            ) from error
+
+        return certifi.where()
+
+    return True
+
 from polyskills.apps.tools import SupportedTools
 from polyskills.remote.sources import (
     GithubManager, SourceControl, SourceManager, ValidSources
@@ -156,6 +209,25 @@ def buildParser() -> argparse.ArgumentParser:
             )
         )
 
+        # ? mutually exclusive TLS verification controls. The default
+        # ? (neither flag) keeps secure verification while honouring
+        # ? REQUESTS_CA_BUNDLE / SSL_CERT_FILE for proxied networks.
+        tlsControls = remoteCommon.add_mutually_exclusive_group()
+        tlsControls.add_argument(
+            "--no-verify", action = "store_true", help = (
+                "Disable TLS certificate verification for every remote "
+                "request. Discouraged - use only on a trusted network "
+                "or behind a TLS-intercepting corporate proxy."
+            )
+        )
+        tlsControls.add_argument(
+            "--request-cert", action = "store_true", help = (
+                "Enforce strict TLS verification against the bundled "
+                "certificate authorities, ignoring environment "
+                "overrides. Fails if a trusted certificate is absent."
+            )
+        )
+
         return remoteCommon
 
     # ? Creating Subparsers:: SOURCES - List Available Sources
@@ -208,7 +280,8 @@ def buildParser() -> argparse.ArgumentParser:
         "list", parents = [remoteControls],
         usage = (
             "polyskills list [-h] [-s SOURCE] [--pagination PAGINATION] "
-            "[--token TOKEN] [--version VERSION] remote LIBRARY"
+            "[--token TOKEN] [--version VERSION] "
+            "[--no-verify | --request-cert] remote LIBRARY"
         ),
         help = (
             "List the available extensions (skills, agents, etc.) "
@@ -239,7 +312,8 @@ def buildParser() -> argparse.ArgumentParser:
         usage = (
             "polyskills manager [-h] -n NAME [--exists {fail,overwrite,merge}] "
             "[-d DESTINATION] [-s SOURCE] [--pagination PAGINATION] "
-            "[--token TOKEN] [--version VERSION] remote LIBRARY ..."
+            "[--token TOKEN] [--version VERSION] "
+            "[--no-verify | --request-cert] remote LIBRARY ..."
         ),
         help = (
             "Main method to manage skills, agents, etc. for a LLM "
@@ -410,13 +484,27 @@ def main() -> None:
             print(output)
         return None
 
+    # ? resolve TLS verification shared by the 'list' and 'manager'
+    # ? subcommands before any remote request leaves the process
+    verify = _resolveVerify(args.no_verify, args.request_cert)
+    if args.no_verify:
+        import urllib3
+        urllib3.disable_warnings(
+            urllib3.exceptions.InsecureRequestWarning
+        )
+        print(
+            "[WARNING] TLS verification is disabled (--no-verify).",
+            file = sys.stderr
+        )
+
     # ? dispatch the 'list' subcommand: enumerate extensions and exit
     if args.command == "list":
         source = _expandUserPath(
             args.source or f"./{args.library}"
         ).as_posix()
         control = SourceControl(
-            pagination = args.pagination, token = args.token
+            pagination = args.pagination, token = args.token,
+            verify = verify
         )
 
         names = listExtensions(
@@ -453,7 +541,8 @@ def main() -> None:
 
     # ? dispatch to the concrete remote manager via the wrapper above
     control = SourceControl(
-        pagination = args.pagination, token = args.token
+        pagination = args.pagination, token = args.token,
+        verify = verify
     )
 
     get(
