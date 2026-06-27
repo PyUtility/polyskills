@@ -25,6 +25,12 @@ import argparse
 from pathlib import Path
 from typing import Callable, Optional, Union
 
+from polyskills.apps.tools import SupportedTools
+from polyskills.error.exceptions import ValidationError
+from polyskills.remote.sources import (
+    GithubManager, SourceControl, SourceManager, ValidSources
+)
+
 
 def _expandUserPath(value : Union[str, Path]) -> Path:
     """
@@ -79,8 +85,8 @@ def _resolveVerify(
     :type  request_cert: bool
     :param request_cert: Pin the bundled trust store when ``True``.
 
-    :raises ValueError: If both flags are requested together, or the
-        :mod:`certifi` bundle cannot be located for strict mode.
+    :raises ValidationError: If both flags are requested together, or
+        the :mod:`certifi` bundle cannot be located for strict mode.
 
     :rtype:   Union[bool, str]
     :returns: ``True`` / ``False`` or a path to a CA bundle, suitable
@@ -88,7 +94,7 @@ def _resolveVerify(
     """
 
     if no_verify and request_cert:
-        raise ValueError(
+        raise ValidationError(
             "Cannot use --no-verify together with --request-cert."
         )
 
@@ -99,7 +105,7 @@ def _resolveVerify(
         try:
             import certifi
         except ImportError as error:
-            raise ValueError(
+            raise ValidationError(
                 "Strict --request-cert mode needs the 'certifi' "
                 "package, which could not be imported."
             ) from error
@@ -108,10 +114,6 @@ def _resolveVerify(
 
     return True
 
-from polyskills.apps.tools import SupportedTools
-from polyskills.remote.sources import (
-    GithubManager, SourceControl, SourceManager, ValidSources
-)
 
 # ? registry mapping each supported remote enumeration to its concrete
 # ? :class:`SourceManager` factory; extending the framework with a new
@@ -399,7 +401,7 @@ def _resolveManager(
     new providers light up automatically once they are added to the
     :data:`_SOURCE_MANAGERS` registry above.
 
-    :raises ValueError: If ``remote`` does not match any of the
+    :raises ValidationError: If ``remote`` does not match any of the
         registered remote URL patterns.
     """
 
@@ -409,7 +411,7 @@ def _resolveManager(
             return candidate
 
     supported = ", ".join(member.value for member in _SOURCE_MANAGERS)
-    raise ValueError(
+    raise ValidationError(
         f"Remote `{remote}` is not supported. "
         f"Supported sources: {supported}"
     )

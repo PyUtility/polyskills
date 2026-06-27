@@ -34,6 +34,11 @@ from urllib.parse import quote
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+from polyskills import __version__
+from polyskills.error.exceptions import (
+    ValidationError, RemoteError, ExtractionError
+)
+
 # ! security limits guarding the remote download / extraction pipeline
 # ? the compressed download is capped to bound disk usage, and the
 # ? cumulative uncompressed size is capped to defang gzip / tar bombs
@@ -44,6 +49,12 @@ _MAX_EXTRACT_BYTES : int = 500 * (1 << 20)
 # ? upper bound on REST pagination so a misbehaving / hostile server
 # ? cannot keep the client looping over an endless `next` link chain
 _MAX_PAGES : int = 100
+
+# ? request timeouts (seconds) and the User-Agent advertised to the
+# ? remote REST API so the client is identifiable in the server logs
+_REQUEST_TIMEOUT : int = 30
+_DOWNLOAD_TIMEOUT : int = 60
+_USER_AGENT : str = f"polyskills/{__version__}"
 
 
 class ValidSources(Enum):
@@ -145,14 +156,14 @@ class SourceManager(abc.ABC):
             ))
             >> ...api.github.com/repos/PyUtility/polyskills/tags?...
 
-        :raises ValueError: If the remote URL does not match the
+        :raises ValidationError: If the remote URL does not match the
             regular expression pattern supported by the module.
         """
 
         matches = self.remotePattern.match(remote)
 
         if not matches:
-            raise ValueError(
+            raise ValidationError(
                 f"Not a Valid URL: {remote}, or Not Supported."
             )
 
@@ -238,8 +249,11 @@ class SourceManager(abc.ABC):
                     defaults to ``master`` that is the latest content
                     from the repository. (TODO)
 
-                - **formatter** (*Callable*) - Formatter method based
-                    on the final LLM tool. (TODO)
+                - **formatter** (*Callable*) - Reserved hook for the
+                    planned skill-to-prompt conversion used by non
+                    Agent-Skills tools. It is forwarded end-to-end but
+                    is a no-op today (never invoked); kept so the public
+                    contract is stable when the feature lands.
         """
 
         prefix : Optional[str] = kwargs.get("prefix", None)
@@ -268,7 +282,9 @@ class SourceManager(abc.ABC):
         mode = mode.lower()
         supported = ["tags", "extensions", "list"]
         if mode not in supported:
-            raise ValueError(f"Mode = `{mode}` is not in {supported}.")
+            raise ValidationError(
+                f"Mode = `{mode}` is not in {supported}."
+            )
 
         # ! validate that positional required arguments are available
         # only enforced for the ``extensions`` mode where they are used
@@ -276,15 +292,15 @@ class SourceManager(abc.ABC):
         # ! ``python -O`` optimised run where assertions are stripped
         if mode == "extensions":
             if name is None:
-                raise ValueError("Extension name cannot be null.")
+                raise ValidationError("Extension name cannot be null.")
             if library is None:
-                raise ValueError(
+                raise ValidationError(
                     f"Library cannot be null, supported are {supported}."
                 )
 
         if mode == "list":
             if library is None:
-                raise ValueError(
+                raise ValidationError(
                     f"Library cannot be null, supported are {supported}."
                 )
 
@@ -435,6 +451,7 @@ class GithubManager(SourceManager):
         headers = {
             "accept" : "application/vnd.github+json",
             "X-GitHub-Api-Version" : "2022-11-28",
+            "user-agent" : _USER_AGENT,
         }
 
         if self._token:
@@ -456,7 +473,7 @@ class GithubManager(SourceManager):
             get tags hosted in ``skillName@vX.Y.Z`` format.
         """
 
-        timeout = kwargs.get("timeout", 30)
+        timeout = kwargs.get("timeout", _REQUEST_TIMEOUT)
         owner, repository = self.getSlug(remote = remote)
         remote_url = self.remoteAPI.format(
             owner = owner, repository = repository,
@@ -468,7 +485,7 @@ class GithubManager(SourceManager):
         pages = 0
         while remote_url:
             if pages >= _MAX_PAGES:
-                raise ValueError(
+                raise RemoteError(
                     f"Tag pagination exceeded the {_MAX_PAGES} page "
                     "safety limit."
                 )
@@ -510,7 +527,7 @@ class GithubManager(SourceManager):
         """
 
         if exists not in ("fail", "overwrite", "merge"):
-            raise ValueError(
+            raise ValidationError(
                 f"exists = `{exists}` not in "
                 "['fail', 'overwrite', 'merge']."
             )
@@ -550,8 +567,8 @@ class GithubManager(SourceManager):
             try:
                 with requests.get(
                     uri, headers = self.headers, stream = True,
-                    verify = self.control.verify, timeout = 60,
-                    allow_redirects = True
+                    verify = self.control.verify,
+                    timeout = _DOWNLOAD_TIMEOUT, allow_redirects = True
                 ) as response:
                     response.raise_for_status()
                     downloaded = 0
@@ -562,7 +579,7 @@ class GithubManager(SourceManager):
                             continue
                         downloaded += len(chunk)
                         if downloaded > _MAX_ARCHIVE_BYTES:
-                            raise ValueError(
+                            raise ExtractionError(
                                 "Download exceeds the safety limit of "
                                 f"{_MAX_ARCHIVE_BYTES} bytes."
                             )
@@ -601,7 +618,7 @@ class GithubManager(SourceManager):
                         resolved = (safe_root / relative).resolve()
                         if resolved != safe_root \
                                 and safe_root not in resolved.parents:
-                            raise ValueError(
+                            raise ExtractionError(
                                 f"Unsafe archive member `{member.name}` "
                                 "escapes the destination directory."
                             )
@@ -611,7 +628,7 @@ class GithubManager(SourceManager):
                         elif member.isfile():
                             extracted_bytes += max(member.size, 0)
                             if extracted_bytes > _MAX_EXTRACT_BYTES:
-                                raise ValueError(
+                                raise ExtractionError(
                                     "Extraction exceeds the safety limit "
                                     f"of {_MAX_EXTRACT_BYTES} bytes."
                                 )
@@ -653,7 +670,7 @@ class GithubManager(SourceManager):
         is sorted alphabetically for deterministic CLI output.
         """
 
-        timeout = kwargs.get("timeout", 30)
+        timeout = kwargs.get("timeout", _REQUEST_TIMEOUT)
         owner, repository = self.getSlug(remote = remote)
 
         sub = Path(str(source)).as_posix().lstrip("./").strip("/")
