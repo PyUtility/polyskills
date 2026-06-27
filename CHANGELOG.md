@@ -50,6 +50,69 @@ under `h3` tags, while the `micro` and "version identifiers" are listed under `h
 
 </details>
 
+### PolySkills v2.1.0 | 2026-06-27
+
+The `v2.1.0` line adds an opt-out **local tracking database** so `polyskills` can answer
+"what did I install, from where, into which directory, and at which commit?" across every
+project and machine. Each `polyskills manager` fetch is recorded by default into a strictly
+normalised SQLite database at `~/.polyskills/records.db`, persisted through the SQLAlchemy ORM.
+Tracking is best-effort and never breaks a fetch; pass `--no-tracking` to skip it.
+
+#### 🎉 Major Features
+
+  * **Local tracking database.** A new `polyskills.database` sub-package records every fetch
+    into `~/.polyskills/records.db` (resolved OS-independently via `Path.home()`). The schema
+    is third-normal-form across seven tables (`sources`, `libraries`, `remotes`, `extensions`,
+    `installations`, `environments`, `fetch_events`) mapped with the SQLAlchemy 2.0 ORM.
+    Derived facts - first-fetched, last-updated, current commit SHA - are computed from the
+    append-only event log rather than cached on any row.
+  * **`records` sub-command.** A read-only `polyskills records [--name <name>] [--db <path>]`
+    command lists every tracked installation or shows one extension's full fetch history -
+    install location, resolved commit SHA, and first-fetched / last-updated timestamps. It
+    never creates the database when it is absent.
+
+#### ✨ Feature Enhancements
+
+  * **`--no-tracking` flag.** `polyskills manager ... --no-tracking` skips the database write
+    for a single invocation; tracking is otherwise on by default.
+  * **`resolveCommit` on source managers.** `SourceManager.resolveCommit(remote, version)`
+    resolves a tag, branch, or SHA to its concrete commit SHA; `GithubManager` implements it via
+    the commits REST endpoint so the exact installed commit is recorded.
+  * **Best-effort by design.** Every tracking write is wrapped so a missing dependency, a
+    read-only home directory, or a locked database degrades to a single warning and never
+    alters the fetch outcome or the process exit status.
+
+#### 🧪 Testing & CI
+
+  * **Offline database suite (`test_database.py`).** 17 hermetic cases cover path resolution,
+    schema and pragmas, cascade delete, event recording, strict normalisation, derived facts,
+    failure capture, graceful degradation, and the new CLI arguments.
+  * **Suite database redirect.** `tests/__init__.py` redirects `POLYSKILLS_DB_PATH` onto a
+    temporary file so no test ever reads or writes the real user database.
+
+#### 💣 Code Refactoring & Internals
+
+  * Added `sqlalchemy>=2.0` to the runtime dependencies.
+  * Superseded and removed the earlier stdlib-`sqlite3` tracker prototype; its development
+    history is retained as a reachable git ancestor through the merge into this line.
+
+#### 📦 Installation
+
+```shell
+$ pip install "polyskills==2.1.0"
+
+$ polyskills manager https://github.com/<owner>/<repo> \
+    --name sql-code-format \
+    --destination ~/.claude/skills/sql-code-format \
+    skills                                            # tracked by default
+
+$ polyskills manager https://github.com/<owner>/<repo> \
+    --name sql-code-format --no-tracking skills       # skip tracking
+
+$ polyskills records                                  # list tracked installs
+$ polyskills records --name sql-code-format           # full history of one
+```
+
 ### PolySkills v2.0.0 | 2026-06-07
 
 The `v2.0.0` line redesigns `polyskills` from a "skills-only fetcher" into a portable, multi-library
