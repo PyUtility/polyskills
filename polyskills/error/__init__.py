@@ -10,5 +10,15 @@ warnings for the module.
 
 from polyskills.error import warnings
 from polyskills.error import exceptions
+from polyskills.error.exceptions import (
+    PolyskillsError,
+    ValidationError,
+    RemoteError,
+    ExtractionError,
+)
 
-__all__ = ["exceptions", "warnings"]
+__all__ = [
+    "exceptions", "warnings",
+    "PolyskillsError", "ValidationError",
+    "RemoteError", "ExtractionError",
+]
