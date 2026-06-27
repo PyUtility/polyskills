@@ -36,6 +36,15 @@ below before generating output.
 
 These rules apply to every Markdown file regardless of role.
 
+### Line Length
+
+  * Wrap every line at **128 characters maximum** - hard-wrap prose, list items, and continuation lines at or before
+    column 128. Never let a line run past 128 characters.
+  * Reflow multi-line list items and the frontmatter `description` block to the same 128-character limit, preserving
+    the existing indentation on continuation lines.
+  * Exceptions: never break a long URL, a Shields.io badge link, an inline-code span, or a line inside a fenced code
+    block solely to satisfy the limit - keep these intact even when they exceed 128 characters.
+
 ### HTML Div Wrappers
 
 Every Markdown file in this repository uses two HTML div wrappers. Always include both and never merge them.
@@ -160,11 +169,30 @@ https://img.shields.io/badge/<Label>-%20<Text>-<COLOR>?style=plastic&logo=<LOGO>
 ```
 
   * `style=plastic` is mandatory - never use `flat`, `flat-square`, or `for-the-badge`.
-  * The color `003B57` (dark teal blue) is the default for skill and agent badges in this repo.
+  * Color each badge with the **official brand color** of the tool, service, or technology it represents - set both the
+    `<COLOR>` segment and the matching `&logo=<LOGO>` slug to that brand. Fall back to the repo default `003B57` (dark
+    teal blue) only when the badge represents the project itself or has no associated brand.
   * Use `%20` to encode spaces within label or text segments.
   * Place all badges inside the `center` div, each on its own line, with a blank line between the heading and the first
     badge block.
   * Wrap every badge in a link to the relevant file or URL: `[![Label](badge-url)](target-link)`.
+
+Common brand colors used in this repo (hex without the leading `#`, paired with the Shields.io logo slug):
+
+| Brand / Service | Color | Logo Slug |
+| :---: | :---: | :---: |
+| Python | `3776AB` | `python` |
+| PyPI | `3775A9` | `pypi` |
+| Git | `F05032` | `git` |
+| GitHub | `181717` | `github` |
+| GitHub Actions | `2088FF` | `githubactions` |
+| PostgreSQL | `4169E1` | `postgresql` |
+| Markdown | `000000` | `markdown` |
+| Anthropic / Claude | `D97757` | `anthropic` |
+| Project default | `003B57` | *(varies)* |
+
+For any brand not listed here, use the color from that project's brand guidelines or its
+[Simple Icons](https://simpleicons.org) entry; reserve `003B57` for badges with no associated brand.
 
 ### Section Emoji Prefix
 
@@ -261,8 +289,9 @@ After the frontmatter, follow this section order:
   - [ ] Is the `<div align = "center">` banner present with a blank line after the opening tag?
   - [ ] Is the `<div align = "justify">` wrapper present with a blank line before the closing tag?
   - [ ] Are all headings in Title Case and using ATX (`#`) style?
+  - [ ] Is every line wrapped at 128 characters or fewer (URLs, badge links, and code-block lines excepted)?
   - [ ] Do `README.md` section headings have an emoji prefix at `##` level only?
-  - [ ] Are all badges using `style=plastic` and wrapped in a link?
+  - [ ] Are all badges using `style=plastic`, colored by the service's brand color (or `003B57` fallback), and linked?
   - [ ] Do all fenced code blocks have an explicit language specifier?
   - [ ] Are unordered list items using `  * ` (2 spaces + asterisk)?
   - [ ] Are checklists using `  - [ ] ` (2 spaces + hyphen)?
