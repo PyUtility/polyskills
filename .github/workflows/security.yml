@@ -30,9 +30,11 @@ jobs:
         python -m pip install -e .
         python -m pip install bandit pip-audit
     - name: Static Security Analysis (bandit)
-      # ? scan the package source for common security anti-patterns
+      # ? scan the package source for common security anti-patterns;
+      # ? tests are excluded as fixtures (e.g. dummy tokens) trip
+      # ? false positives that are not production security concerns
       run: |
-        bandit -r polyskills/
+        bandit -r polyskills/ -x polyskills/tests
     - name: Dependency Vulnerability Audit (pip-audit)
       # ? fail the build on any known-vulnerable dependency
       run: |
