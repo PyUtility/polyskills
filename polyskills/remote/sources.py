@@ -30,8 +30,32 @@ import requests
 
 from enum import Enum
 from pathlib import Path
+from urllib.parse import quote
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
+from polyskills import __version__
+from polyskills.error.exceptions import (
+    ValidationError, RemoteError, ExtractionError
+)
+
+# ! security limits guarding the remote download / extraction pipeline
+# ? the compressed download is capped to bound disk usage, and the
+# ? cumulative uncompressed size is capped to defang gzip / tar bombs
+_CHUNK_SIZE : int = 1 << 14
+_MAX_ARCHIVE_BYTES : int = 100 * (1 << 20)
+_MAX_EXTRACT_BYTES : int = 500 * (1 << 20)
+
+# ? upper bound on REST pagination so a misbehaving / hostile server
+# ? cannot keep the client looping over an endless `next` link chain
+_MAX_PAGES : int = 100
+
+# ? request timeouts (seconds) and the User-Agent advertised to the
+# ? remote REST API so the client is identifiable in the server logs
+_REQUEST_TIMEOUT : int = 30
+_DOWNLOAD_TIMEOUT : int = 60
+_USER_AGENT : str = f"polyskills/{__version__}"
+
 
 class ValidSources(Enum):
     GITHUB = "https://www.github.com/"
@@ -54,6 +78,14 @@ class SourceControl:
     :param token: A authorization token to access the remote URL, this
         value is discouraged to be used in a production system.
 
+    :type  verify: Union[bool, str]
+    :param verify: TLS verification forwarded verbatim to every
+        :func:`requests.get` call. ``True`` (default) uses the standard
+        trust store and honours the ``REQUESTS_CA_BUNDLE`` /
+        ``SSL_CERT_FILE`` environment overrides, a string pins a CA
+        bundle path, and ``False`` disables verification entirely
+        (discouraged, exposed via the ``--no-verify`` CLI flag).
+
     Each parameter should be available as a CLI command for dynamic
     control which sets the data class defaults during runtime.
     """
@@ -62,6 +94,10 @@ class SourceControl:
 
     # ? Token Attribute: Useful only in testing environment
     token : Optional[str] = None
+
+    # ? TLS verification policy forwarded to every remote request;
+    # ? defaults to secure verification, see the param docstring above
+    verify : Union[bool, str] = True
 
 
 class SourceManager(abc.ABC):
@@ -120,14 +156,14 @@ class SourceManager(abc.ABC):
             ))
             >> ...api.github.com/repos/PyUtility/polyskills/tags?...
 
-        :raises ValueError: If the remote URL does not match the
+        :raises ValidationError: If the remote URL does not match the
             regular expression pattern supported by the module.
         """
 
         matches = self.remotePattern.match(remote)
 
         if not matches:
-            raise ValueError(
+            raise ValidationError(
                 f"Not a Valid URL: {remote}, or Not Supported."
             )
 
@@ -213,8 +249,11 @@ class SourceManager(abc.ABC):
                     defaults to ``master`` that is the latest content
                     from the repository. (TODO)
 
-                - **formatter** (*Callable*) - Formatter method based
-                    on the final LLM tool. (TODO)
+                - **formatter** (*Callable*) - Reserved hook for the
+                    planned skill-to-prompt conversion used by non
+                    Agent-Skills tools. It is forwarded end-to-end but
+                    is a no-op today (never invoked); kept so the public
+                    contract is stable when the feature lands.
         """
 
         prefix : Optional[str] = kwargs.get("prefix", None)
@@ -242,19 +281,28 @@ class SourceManager(abc.ABC):
         # always use lower case naming for modes; in-built control
         mode = mode.lower()
         supported = ["tags", "extensions", "list"]
-        assert mode in supported, \
-            f"Mode = `{mode}` is not in {supported}"
+        if mode not in supported:
+            raise ValidationError(
+                f"Mode = `{mode}` is not in {supported}."
+            )
 
         # ! validate that positional required arguments are available
         # only enforced for the ``extensions`` mode where they are used
+        # ! raised explicitly (not ``assert``) so the checks survive a
+        # ! ``python -O`` optimised run where assertions are stripped
         if mode == "extensions":
-            assert name is not None, "Extension name cannot be null."
-            assert library is not None, \
-                f"Library cannot be null, supported are {supported}"
+            if name is None:
+                raise ValidationError("Extension name cannot be null.")
+            if library is None:
+                raise ValidationError(
+                    f"Library cannot be null, supported are {supported}."
+                )
 
         if mode == "list":
-            assert library is not None, \
-                f"Library cannot be null, supported are {supported}"
+            if library is None:
+                raise ValidationError(
+                    f"Library cannot be null, supported are {supported}."
+                )
 
         # lazy dispatch: only the requested branch is invoked
         methods : Dict[str, Callable[[], Any]] = dict(
@@ -269,6 +317,34 @@ class SourceManager(abc.ABC):
         )
 
         return methods[mode]() # return the underlying assets
+
+
+    def resolveCommit(
+        self, remote : str, version : str = "master", **kwargs
+    ) -> Optional[str]:
+        """
+        Resolve ``version`` (a tag, branch, or SHA) to the concrete
+        commit SHA it points at on the remote.
+
+        The base implementation returns ``None``; providers that can
+        cheaply resolve a reference to a commit SHA override this so
+        the tracking database can record the exact commit a fetch
+        landed on. Returning ``None`` is always acceptable and simply
+        leaves the recorded SHA empty - resolution is never required
+        for a fetch to succeed.
+
+        :type  remote: str
+        :param remote: Remote URL forwarded to the provider.
+
+        :type  version: str
+        :param version: The tag, branch, or SHA to resolve.
+
+        :rtype:   Optional[str]
+        :returns: The resolved commit SHA, or ``None`` when it cannot
+            be determined.
+        """
+
+        return None
 
 
     @abc.abstractmethod
@@ -403,6 +479,7 @@ class GithubManager(SourceManager):
         headers = {
             "accept" : "application/vnd.github+json",
             "X-GitHub-Api-Version" : "2022-11-28",
+            "user-agent" : _USER_AGENT,
         }
 
         if self._token:
@@ -424,7 +501,7 @@ class GithubManager(SourceManager):
             get tags hosted in ``skillName@vX.Y.Z`` format.
         """
 
-        timeout = kwargs.get("timeout", 30)
+        timeout = kwargs.get("timeout", _REQUEST_TIMEOUT)
         owner, repository = self.getSlug(remote = remote)
         remote_url = self.remoteAPI.format(
             owner = owner, repository = repository,
@@ -433,9 +510,17 @@ class GithubManager(SourceManager):
 
         tags : List[str] = []
 
+        pages = 0
         while remote_url:
+            if pages >= _MAX_PAGES:
+                raise RemoteError(
+                    f"Tag pagination exceeded the {_MAX_PAGES} page "
+                    "safety limit."
+                )
+            pages += 1
+
             response = requests.get(
-                remote_url, verify = False,
+                remote_url, verify = self.control.verify,
                 headers = self.headers, timeout = timeout
             )
             response.raise_for_status()
@@ -446,8 +531,63 @@ class GithubManager(SourceManager):
                 tags.append(item["name"])
 
             remote_url = response.links.get("next", {}).get("url")
-        
+
         return tags
+
+
+    def resolveCommit(
+        self, remote : str, version : str = "master", **kwargs
+    ) -> Optional[str]:
+        """
+        Resolve ``version`` to a commit SHA using the GitHub commits
+        REST endpoint ``GET /repos/{owner}/{repository}/commits/{ref}``.
+
+        The request sets the ``Accept: application/vnd.github.sha``
+        media type so the endpoint returns the 40-character SHA as a
+        plain-text body instead of the full commit payload, keeping
+        the lookup cheap. TLS verification follows the configured
+        :attr:`SourceControl.verify` policy, identical to every other
+        remote request, so it is never silently disabled. The call is
+        best-effort: any transport or HTTP error yields ``None`` so a
+        tracking lookup never raises into the fetch path.
+
+        :type  remote: str
+        :param remote: GitHub remote URL.
+
+        :type  version: str
+        :param version: Tag, branch, or SHA to resolve, defaults to
+            ``master``.
+
+        :rtype:   Optional[str]
+        :returns: The resolved commit SHA, or ``None`` on any failure.
+        """
+
+        timeout = kwargs.get("timeout", 30)
+
+        try:
+            owner, repository = self.getSlug(remote = remote)
+        except ValueError:
+            return None
+
+        uri = (
+            "https://api.github.com/repos/"
+            "{owner}/{repository}/commits/{ref}"
+        ).format(owner = owner, repository = repository, ref = version)
+
+        headers = dict(self.headers)
+        headers["accept"] = "application/vnd.github.sha"
+
+        try:
+            response = requests.get(
+                uri, verify = self.control.verify,
+                headers = headers, timeout = timeout
+            )
+            response.raise_for_status()
+        except requests.RequestException:
+            return None
+
+        sha = response.text.strip()
+        return sha or None
 
 
     def _getExtensions(
@@ -469,14 +609,21 @@ class GithubManager(SourceManager):
             to ``fail``.
         """
 
-        assert exists in ("fail", "overwrite", "merge"), \
-            f"exists = `{exists}` not in ['fail', 'overwrite', 'merge']"
+        if exists not in ("fail", "overwrite", "merge"):
+            raise ValidationError(
+                f"exists = `{exists}` not in "
+                "['fail', 'overwrite', 'merge']."
+            )
 
         owner, repository = self.getSlug(remote = remote)
         uri = (
             "https://api.github.com/repos/"
             "{owner}/{repository}/tarball/{tag}"
-        ).format(owner = owner, repository = repository, tag = version)
+        ).format(
+            owner = quote(owner, safe = ""),
+            repository = quote(repository, safe = ""),
+            tag = quote(str(version), safe = "/")
+        )
 
         destination = Path(destination)
         if destination.exists() and destination.is_dir() \
@@ -503,12 +650,23 @@ class GithubManager(SourceManager):
             try:
                 with requests.get(
                     uri, headers = self.headers, stream = True,
-                    verify = False, timeout = 60, allow_redirects = True
+                    verify = self.control.verify,
+                    timeout = _DOWNLOAD_TIMEOUT, allow_redirects = True
                 ) as response:
                     response.raise_for_status()
-                    for chunk in response.iter_content(chunk_size = 1 << 14):
-                        if chunk:
-                            handle.write(chunk)
+                    downloaded = 0
+                    for chunk in response.iter_content(
+                        chunk_size = _CHUNK_SIZE
+                    ):
+                        if not chunk:
+                            continue
+                        downloaded += len(chunk)
+                        if downloaded > _MAX_ARCHIVE_BYTES:
+                            raise ExtractionError(
+                                "Download exceeds the safety limit of "
+                                f"{_MAX_ARCHIVE_BYTES} bytes."
+                            )
+                        handle.write(chunk)
                 handle.flush()
                 handle.close()
 
@@ -522,7 +680,12 @@ class GithubManager(SourceManager):
                     root = members[0].name.split("/", 1)[0]
                     prefix = f"{root}/{target}/"
 
+                    # ! resolve the destination once so every member can
+                    # ! be verified to stay inside this subtree below
+                    safe_root = destination.resolve()
+
                     found = False
+                    extracted_bytes = 0
                     for member in members:
                         if not member.name.startswith(prefix):
                             continue
@@ -532,9 +695,26 @@ class GithubManager(SourceManager):
                             continue
 
                         out_path = destination / relative
+
+                        # ! defend against path traversal - a crafted
+                        # ! member may carry '..' segments that escape
+                        resolved = (safe_root / relative).resolve()
+                        if resolved != safe_root \
+                                and safe_root not in resolved.parents:
+                            raise ExtractionError(
+                                f"Unsafe archive member `{member.name}` "
+                                "escapes the destination directory."
+                            )
+
                         if member.isdir():
                             out_path.mkdir(parents = True, exist_ok = True)
                         elif member.isfile():
+                            extracted_bytes += max(member.size, 0)
+                            if extracted_bytes > _MAX_EXTRACT_BYTES:
+                                raise ExtractionError(
+                                    "Extraction exceeds the safety limit "
+                                    f"of {_MAX_EXTRACT_BYTES} bytes."
+                                )
                             out_path.parent.mkdir(
                                 parents = True, exist_ok = True
                             )
@@ -544,6 +724,8 @@ class GithubManager(SourceManager):
                             with extracted as src_fp, \
                                     open(out_path, "wb") as dst_fp:
                                 shutil.copyfileobj(src_fp, dst_fp)
+                        # ? symlink / hardlink / device / fifo members
+                        # ? are neither dir nor file - skipped on purpose
 
                     if not found:
                         raise FileNotFoundError(
@@ -571,7 +753,7 @@ class GithubManager(SourceManager):
         is sorted alphabetically for deterministic CLI output.
         """
 
-        timeout = kwargs.get("timeout", 30)
+        timeout = kwargs.get("timeout", _REQUEST_TIMEOUT)
         owner, repository = self.getSlug(remote = remote)
 
         sub = Path(str(source)).as_posix().lstrip("./").strip("/")
@@ -579,12 +761,14 @@ class GithubManager(SourceManager):
             "https://api.github.com/repos/"
             "{owner}/{repository}/contents/{path}?ref={ref}"
         ).format(
-            owner = owner, repository = repository,
-            path = sub, ref = version
+            owner = quote(owner, safe = ""),
+            repository = quote(repository, safe = ""),
+            path = quote(sub, safe = "/"),
+            ref = quote(str(version), safe = "")
         )
 
         response = requests.get(
-            uri, verify = False,
+            uri, verify = self.control.verify,
             headers = self.headers, timeout = timeout
         )
         response.raise_for_status()

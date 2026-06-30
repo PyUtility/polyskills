@@ -50,6 +50,119 @@ under `h3` tags, while the `micro` and "version identifiers" are listed under `h
 
 </details>
 
+### PolySkills v2.1.0 | 2026-06-27
+
+The `v2.1.0` line is a security-hardening, robustness, and observability release. Born out of a
+full audit of the remote download and extraction pipeline, it closes the supply-chain gaps that let
+untrusted network traffic and crafted archives influence what landed on disk, hardens the CI/CD
+pipeline against tag-mutation attacks, and adds an opt-out local tracking database so `polyskills`
+can answer "what did I install, from where, into which directory, and at which commit?" across every
+project and machine. The `v2.0.0` CLI surface is kept intact.
+
+> [!NOTE]
+> **Behaviour changes (non-breaking API).** TLS verification is now **on by default** (it was
+> effectively disabled before); input validation raises `polyskills.error` exceptions
+> (`ValidationError` still subclasses `ValueError`); the CLI renders failures as a clean
+> `[ERROR]` message with a non-zero exit instead of a traceback; and every `manager` fetch is
+> recorded in `~/.polyskills/records.db` unless `--no-tracking` is passed. The sub-command surface
+> and existing call sites are unchanged.
+
+#### 🎉 Major Features
+
+  * **Local tracking database.** A new `polyskills.database` sub-package records every fetch
+    into `~/.polyskills/records.db` (resolved OS-independently via `Path.home()`). The schema
+    is third-normal-form across seven tables (`sources`, `libraries`, `remotes`, `extensions`,
+    `installations`, `environments`, `fetch_events`) mapped with the SQLAlchemy 2.0 ORM.
+    Derived facts - first-fetched, last-updated, current commit SHA - are computed from the
+    append-only event log rather than cached on any row.
+  * **`records` sub-command.** A read-only `polyskills records [--name <name>] [--db <path>]`
+    command lists every tracked installation or shows one extension's full fetch history -
+    install location, resolved commit SHA, and first-fetched / last-updated timestamps. It
+    never creates the database when it is absent.
+
+#### ✨ Feature Enhancements
+
+  * **Configurable TLS verification.** Verification defaults to secure (`verify=True`, honouring
+    `REQUESTS_CA_BUNDLE` / `SSL_CERT_FILE`). Two new mutually exclusive flags tune it: `--no-verify`
+    disables it for a trusted network or behind a TLS-intercepting proxy, and `--request-cert` pins
+    the bundled `certifi` authorities for strict verification that fails closed when only an
+    interception certificate is available.
+  * **Domain exception hierarchy.** `polyskills.error` now defines `PolyskillsError` with
+    `ValidationError`, `RemoteError`, and `ExtractionError`, so callers can catch a specific failure
+    mode while a single `except PolyskillsError` still covers them all.
+  * **Identifiable client.** Every GitHub request now advertises a `polyskills/<version>`
+    `User-Agent` header, and request timeouts are centralised as named constants.
+  * **`--no-tracking` flag.** `polyskills manager ... --no-tracking` skips the database write
+    for a single invocation; tracking is otherwise on by default.
+  * **`resolveCommit` on source managers.** `SourceManager.resolveCommit(remote, version)`
+    resolves a tag, branch, or SHA to its concrete commit SHA; `GithubManager` implements it via
+    the commits REST endpoint (honouring the configurable TLS policy) so the exact installed
+    commit is recorded.
+  * **Best-effort tracking.** Every tracking write is wrapped so a missing dependency, a
+    read-only home directory, or a locked database degrades to a single warning and never
+    alters the fetch outcome or the process exit status.
+
+#### 🛠️ Security Hardening & Fixes
+
+  * **TLS no longer disabled.** The hard-coded `verify=False` on every remote request — a
+    man-in-the-middle exposure — is removed in favour of the configurable policy above; the
+    tracking database's `resolveCommit` request honours the same policy.
+  * **Archive path-traversal guard.** Each tarball member is resolved against the destination subtree
+    and rejected with `ExtractionError` if it escapes; non file/dir members (symlinks, devices) are
+    skipped on purpose.
+  * **Size caps.** The compressed download and the cumulative uncompressed size are bounded to defang
+    disk-exhaustion and decompression-bomb archives.
+  * **Validation hardened.** Argument checks raise exceptions instead of `assert` (which `python -O`
+    strips); URL path / ref segments are percent-encoded against query injection; and tag pagination
+    is capped to stop an endless `next`-link chain.
+  * **Clean CLI errors.** `main()` funnels expected failures into a concise `[ERROR]` message and a
+    non-zero exit; set `POLYSKILLS_DEBUG` to re-raise the full traceback.
+  * **Version & dependencies.** `__version__` is bumped to `v2.1.0`, the unused `packaging` runtime
+    dependency is dropped, and `sqlalchemy>=2.0` is added for the tracking database.
+
+#### 🧪 Testing & CI
+
+  * **Hermetic-by-default suite.** The default `unittest discover` run is now fully offline; the
+    live-network tests are opt-in via `POLYSKILLS_RUN_LIVE=1` (with `POLYSKILLS_NO_VERIFY=1` for a
+    proxied network).
+  * **Security regression module (`test_security.py`).** Mocked-transport tests lock in TLS
+    forwarding, path-traversal rejection, the download / extraction size caps, the pagination cap,
+    and verify-flag resolution.
+  * **Offline database suite (`test_database.py`).** 18 hermetic cases cover path resolution,
+    schema and pragmas, cascade delete, event recording, strict normalisation, derived facts,
+    failure capture, graceful degradation, distinct-extension isolation, and the new CLI arguments.
+  * **Suite database redirect.** `tests/__init__.py` redirects `POLYSKILLS_DB_PATH` onto a
+    temporary file so no test ever reads or writes the real user database.
+  * **Supply-chain-hardened workflows.** Every GitHub Action is pinned to a commit SHA (the mutable
+    tag kept as a comment), a new `security.yml` runs `bandit` and `pip-audit`, and least-privilege
+    `permissions` are declared on the linting and release-build jobs.
+
+#### 💣 Code Refactoring & Internals
+
+  * Superseded and removed the earlier stdlib-`sqlite3` tracker prototype in favour of the
+    SQLAlchemy `polyskills.database` package; its development history is retained as a reachable
+    git ancestor through the merge into this line.
+
+#### 📦 Installation
+
+```shell
+$ pip install "polyskills==2.1.0"
+
+$ polyskills list https://github.com/<owner>/<repo> skills --source extensions/skills
+
+$ polyskills manager https://github.com/<owner>/<repo> \
+    --name sql-code-format \
+    --destination ~/.claude/skills/sql-code-format \
+    --request-cert \
+    skills                                            # secure TLS, tracked
+
+$ polyskills manager https://github.com/<owner>/<repo> \
+    --name sql-code-format --no-tracking skills       # skip tracking
+
+$ polyskills records                                  # list tracked installs
+$ polyskills records --name sql-code-format           # full history of one
+```
+
 ### PolySkills v2.0.0 | 2026-06-07
 
 The `v2.0.0` line redesigns `polyskills` from a "skills-only fetcher" into a portable, multi-library

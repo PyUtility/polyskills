@@ -79,7 +79,7 @@ default) of Python language and AI tools.
 ### 🧰 CLI Overview
 
 Once installed, the `polyskills` command is exposed on the system `PATH`. Use the `--help` flag at any level to discover
-documentation for all sub-commands and flags. The CLI is organized around four sub-commands:
+documentation for all sub-commands and flags. The CLI is organized around five sub-commands:
 
 | 🔖 Command | 🎯 Purpose |
 | :--- | :--- |
@@ -87,6 +87,7 @@ documentation for all sub-commands and flags. The CLI is organized around four s
 | `sources` | List the supported remote source providers (e.g., GitHub) and exit. |
 | `list` | Enumerate available extensions under a remote `<source>` directory, no download. |
 | `manager` | Fetch a single extension (`skills` / `agents`) from the remote into a local directory. |
+| `records` | Inspect the local tracking database (install location, commit SHA, timestamps). |
 
 ```shell
 $ polyskills --help          # top level documentation and sub-commands
@@ -173,6 +174,44 @@ $ polyskills list https://github.com/<org>/<private-repo> skills \
 The `--pagination` flag (defaults to `100`, the GitHub maximum) tunes how many entries are returned per REST API page
 during enumeration. The `--version` flag (defaults to `master`) pins the fetch to an exact tag or commit SHA so the
 extension content is reproducible across systems.
+
+### 🗃️ Local Tracking Database
+
+Every `polyskills manager` fetch is recorded by default into a local SQLite database at `~/.polyskills/records.db`
+(resolved OS-independently via `Path.home()`) so you can answer "what did I install, from where, into which directory,
+and at which commit?" across projects and machines. The schema is strictly normalised and managed through the
+*SQLAlchemy* ORM, and every write is **best-effort**: a missing dependency, a read-only home directory, or a locked
+database degrades to a single warning and never breaks the fetch. Pass `--no-tracking` to skip the write for a single
+invocation.
+
+```shell
+$ polyskills manager https://github.com/PyUtility/polyskills \
+      --name sql-code-format \
+      --destination ~/.claude/skills/sql-code-format \
+      skills                                       # recorded in ~/.polyskills/records.db
+
+$ polyskills manager https://github.com/PyUtility/polyskills \
+      --name sql-code-format --no-tracking skills  # not recorded
+```
+
+Use the read-only `records` sub-command to inspect what has been tracked. Without `--name` it lists every tracked
+installation; with `--name` it shows one extension's full fetch history (install location, resolved commit SHA, and
+first-fetched / last-updated timestamps). The command never creates the database when it is absent.
+
+```shell
+$ polyskills records
+>> Tracked installations (1):
+>>   >> 01. sql-code-format  [skills]
+>>          remote  : https://github.com/PyUtility/polyskills (extensions/skills)
+>>          path    : /home/user/.claude/skills/sql-code-format
+>>          commit  : 5b23f55de9a1... (requested master)
+>>          history : first 2026-06-27 12:53:52 | last 2026-06-27 12:53:52 | 1 fetch(es), last success
+
+$ polyskills records --name sql-code-format        # full per-fetch history of one extension
+```
+
+The same data is available through the Python API - `record_fetch`, `list_installations`, and `get_installation`
+in `polyskills.database` - so tracking can be embedded in automation without the CLI.
 
 ### 🐍 Programmatic Usage
 

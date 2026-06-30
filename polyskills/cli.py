@@ -20,10 +20,21 @@ The CLI tool is developed to manage LLM essential functions - like
 
 import os
 import sys
+import time
 import argparse
 
 from pathlib import Path
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Dict, Optional, Tuple, Union
+
+from polyskills.apps.tools import SupportedTools
+from polyskills.error.exceptions import ValidationError
+from polyskills.remote.sources import (
+    GithubManager, SourceControl, SourceManager, ValidSources
+)
+from polyskills.database import (
+    default_database_path, get_installation, list_installations,
+    record_fetch, set_invocation_context
+)
 
 
 def _expandUserPath(value : Union[str, Path]) -> Path:
@@ -55,10 +66,59 @@ def _expandUserPath(value : Union[str, Path]) -> Path:
     expanded = os.path.expandvars(os.fspath(value))
     return Path(expanded).expanduser()
 
-from polyskills.apps.tools import SupportedTools
-from polyskills.remote.sources import (
-    GithubManager, SourceControl, SourceManager, ValidSources
-)
+
+def _resolveVerify(
+    no_verify : bool = False, request_cert : bool = False
+) -> Union[bool, str]:
+    """
+    Resolve the ``verify`` value forwarded to every remote request
+    from the mutually exclusive ``--no-verify`` / ``--request-cert``
+    command line flags.
+
+    The default (neither flag) returns ``True`` so :mod:`requests`
+    uses its standard trust store while still honouring the
+    ``REQUESTS_CA_BUNDLE`` / ``SSL_CERT_FILE`` environment overrides
+    that are common behind a corporate proxy. ``--no-verify`` returns
+    ``False`` to disable verification, while ``--request-cert`` pins
+    the bundled :mod:`certifi` authorities for strict verification
+    that deliberately fails when only an intercepting certificate is
+    available.
+
+    :type  no_verify: bool
+    :param no_verify: Disable verification entirely when ``True``.
+
+    :type  request_cert: bool
+    :param request_cert: Pin the bundled trust store when ``True``.
+
+    :raises ValidationError: If both flags are requested together, or
+        the :mod:`certifi` bundle cannot be located for strict mode.
+
+    :rtype:   Union[bool, str]
+    :returns: ``True`` / ``False`` or a path to a CA bundle, suitable
+        for the ``verify`` keyword of :func:`requests.get`.
+    """
+
+    if no_verify and request_cert:
+        raise ValidationError(
+            "Cannot use --no-verify together with --request-cert."
+        )
+
+    if no_verify:
+        return False
+
+    if request_cert:
+        try:
+            import certifi
+        except ImportError as error:
+            raise ValidationError(
+                "Strict --request-cert mode needs the 'certifi' "
+                "package, which could not be imported."
+            ) from error
+
+        return certifi.where()
+
+    return True
+
 
 # ? registry mapping each supported remote enumeration to its concrete
 # ? :class:`SourceManager` factory; extending the framework with a new
@@ -66,6 +126,42 @@ from polyskills.remote.sources import (
 _SOURCE_MANAGERS = {
     ValidSources.GITHUB : GithubManager,
 }
+
+
+def _summariseDestination(destination : Path) -> Tuple[int, int]:
+    """
+    Walk ``destination`` and return ``(file_count, total_bytes)`` so a
+    successful fetch can be recorded with its on-disk footprint.
+
+    The helper is best-effort: any :class:`OSError` raised while
+    iterating the tree is swallowed and the partial counts gathered so
+    far are returned, preserving the "tracking is never fatal"
+    contract of the command-line interface.
+
+    :type  destination: pathlib.Path
+    :param destination: Directory whose files are counted and sized.
+
+    :rtype:   Tuple[int, int]
+    :returns: A two-tuple ``(file_count, total_bytes)`` of the regular
+        files found beneath ``destination``.
+    """
+
+    file_count = 0
+    total_bytes = 0
+
+    try:
+        for path in Path(destination).rglob("*"):
+            if not path.is_file():
+                continue
+            file_count += 1
+            try:
+                total_bytes += path.stat().st_size
+            except OSError:
+                continue
+    except OSError:
+        pass
+
+    return file_count, total_bytes
 
 
 def buildParser() -> argparse.ArgumentParser:
@@ -156,6 +252,25 @@ def buildParser() -> argparse.ArgumentParser:
             )
         )
 
+        # ? mutually exclusive TLS verification controls. The default
+        # ? (neither flag) keeps secure verification while honouring
+        # ? REQUESTS_CA_BUNDLE / SSL_CERT_FILE for proxied networks.
+        tlsControls = remoteCommon.add_mutually_exclusive_group()
+        tlsControls.add_argument(
+            "--no-verify", action = "store_true", help = (
+                "Disable TLS certificate verification for every remote "
+                "request. Discouraged - use only on a trusted network "
+                "or behind a TLS-intercepting corporate proxy."
+            )
+        )
+        tlsControls.add_argument(
+            "--request-cert", action = "store_true", help = (
+                "Enforce strict TLS verification against the bundled "
+                "certificate authorities, ignoring environment "
+                "overrides. Fails if a trusted certificate is absent."
+            )
+        )
+
         return remoteCommon
 
     # ? Creating Subparsers:: SOURCES - List Available Sources
@@ -194,6 +309,36 @@ def buildParser() -> argparse.ArgumentParser:
         ])
     )
 
+    # ? Creating Subparsers:: RECORDS - Inspect the Tracking Database
+    records = subparser.add_parser(
+        "records", help = (
+            "Inspect the local tracking database "
+            "(~/.polyskills/records.db) that records every extension "
+            "fetched on this system - where it is installed, the "
+            "resolved commit SHA, and when it was first fetched and "
+            "last updated. Without '--name' every tracked installation "
+            "is listed; with '--name' the full fetch history of the "
+            "matching extension is shown. This command is read-only "
+            "and never creates the database."
+        )
+    )
+
+    records.add_argument(
+        "-n", "--name", type = str, default = None, metavar = "", help = (
+            "Show the detailed fetch history for the extension with "
+            "this leaf name (e.g., 'sql-code-format') instead of the "
+            "summary listing of every tracked installation."
+        )
+    )
+
+    records.add_argument(
+        "--db", type = str, default = None, metavar = "", help = (
+            "Path to the tracking database to read, defaults to "
+            "'~/.polyskills/records.db'. Primarily an advanced or "
+            "testing affordance."
+        )
+    )
+
     # shared remote arguments across sub-parsers
     remoteControls = buildRemoteControls()
 
@@ -208,7 +353,8 @@ def buildParser() -> argparse.ArgumentParser:
         "list", parents = [remoteControls],
         usage = (
             "polyskills list [-h] [-s SOURCE] [--pagination PAGINATION] "
-            "[--token TOKEN] [--version VERSION] remote LIBRARY"
+            "[--token TOKEN] [--version VERSION] "
+            "[--no-verify | --request-cert] remote LIBRARY"
         ),
         help = (
             "List the available extensions (skills, agents, etc.) "
@@ -239,7 +385,8 @@ def buildParser() -> argparse.ArgumentParser:
         usage = (
             "polyskills manager [-h] -n NAME [--exists {fail,overwrite,merge}] "
             "[-d DESTINATION] [-s SOURCE] [--pagination PAGINATION] "
-            "[--token TOKEN] [--version VERSION] remote LIBRARY ..."
+            "[--token TOKEN] [--version VERSION] "
+            "[--no-verify | --request-cert] remote LIBRARY ..."
         ),
         help = (
             "Main method to manage skills, agents, etc. for a LLM "
@@ -278,6 +425,18 @@ def buildParser() -> argparse.ArgumentParser:
             "placed, this defaults to the local directory into their "
             "respective directories like ./skills, ./agents, etc. "
             "as per the standards."
+        )
+    )
+
+    manager.add_argument(
+        "--no-tracking", action = "store_true", default = False,
+        help = (
+            "Disable recording this installation in the local tracking "
+            "database (~/.polyskills/records.db). By default every "
+            "fetch - successful or failed - is tracked so the install "
+            "location, resolved commit SHA, and first-fetched / "
+            "last-updated timestamps are retained; pass this flag to "
+            "skip the database write entirely for this invocation."
         )
     )
 
@@ -325,7 +484,7 @@ def _resolveManager(
     new providers light up automatically once they are added to the
     :data:`_SOURCE_MANAGERS` registry above.
 
-    :raises ValueError: If ``remote`` does not match any of the
+    :raises ValidationError: If ``remote`` does not match any of the
         registered remote URL patterns.
     """
 
@@ -335,7 +494,7 @@ def _resolveManager(
             return candidate
 
     supported = ", ".join(member.value for member in _SOURCE_MANAGERS)
-    raise ValueError(
+    raise ValidationError(
         f"Remote `{remote}` is not supported. "
         f"Supported sources: {supported}"
     )
@@ -394,13 +553,231 @@ def listExtensions(
     )
 
 
-def main() -> None:
+def _recordFetch(
+    args : argparse.Namespace, control : SourceControl,
+    status : str, error : Optional[str], duration_ms : int
+) -> None:
     """
-    Entry point for CLI tool for :mod:`polyskills` that parses the
-    command line arguments using :mod:`argparse` module.
+    Record one ``manager`` fetch attempt in the tracking database.
+
+    The helper resolves the remote slug, the provider metadata, the
+    resolved commit SHA, and the on-disk footprint, then delegates to
+    :func:`polyskills.database.record_fetch`. It is strictly
+    best-effort: every step is wrapped so a tracking failure - a
+    network error while resolving the SHA, an unreadable destination,
+    or a database fault - never propagates into the CLI exit path.
+
+    :type  args: argparse.Namespace
+    :param args: Parsed ``manager`` namespace carrying the remote,
+        name, library, source, destination, version, and exists policy.
+
+    :type  control: SourceControl
+    :param control: Source control built from ``--pagination`` and
+        ``--token``, reused to resolve the provider and commit SHA.
+
+    :type  status: str
+    :param status: Either ``"success"`` or ``"failed"``.
+
+    :type  error: Optional[str]
+    :param error: Error description recorded on a failed attempt.
+
+    :type  duration_ms: int
+    :param duration_ms: Wall-clock duration of the attempt in
+        milliseconds.
+
+    :rtype:   None
+    :returns: Nothing - the row is written as a best-effort side
+        effect; failures are swallowed.
     """
 
-    args = buildParser().parse_args()
+    try:
+        manager = _resolveManager(remote = args.remote, control = control)
+        owner, repository = manager.getSlug(remote = args.remote)
+
+        commit_sha  : Optional[str] = None
+        file_count  : Optional[int] = None
+        total_bytes : Optional[int] = None
+
+        if status == "success":
+            commit_sha = manager.resolveCommit(args.remote, args.version)
+            file_count, total_bytes = _summariseDestination(
+                args.destination
+            )
+
+        action = "fetch" if args.exists == "fail" else args.exists
+
+        record_fetch(
+            source_name = manager.source.name,
+            source_base_url = manager.source.value,
+            owner = owner, repository = repository,
+            remote_url = args.remote,
+            library = args.library, name = args.name,
+            source_dir = Path(str(args.source)).as_posix(),
+            install_path = str(Path(args.destination).resolve()),
+            requested_version = args.version,
+            action = action, status = status,
+            resolved_commit_sha = commit_sha,
+            file_count = file_count, total_bytes = total_bytes,
+            duration_ms = duration_ms, error = error,
+        )
+    except Exception:  # nosec B110 - intentional best-effort swallow
+        # ! tracking is strictly best-effort; a failure here must never
+        # ! break the install path or alter the CLI exit status.
+        pass
+
+
+def _formatTimestamp(value : Any) -> str:
+    """
+    Render a stored timestamp for display, or ``n/a`` when absent.
+
+    :type  value: Any
+    :param value: A :class:`datetime.datetime` (or ``None``) read back
+        from the tracking database.
+
+    :rtype:   str
+    :returns: A ``YYYY-MM-DD HH:MM:SS`` string, ``n/a`` for ``None``,
+        or the raw string form for any unexpected value.
+    """
+
+    if value is None:
+        return "n/a"
+    try:
+        return value.strftime("%Y-%m-%d %H:%M:%S")
+    except (AttributeError, ValueError):
+        return str(value)
+
+
+def _formatRecordSummary(index : int, row : Dict[str, Any]) -> str:
+    """
+    Render one installation summary block for the ``records`` listing.
+
+    :type  index: int
+    :param index: Zero-based position used to build the display number.
+
+    :type  row: Dict[str, Any]
+    :param row: One summary mapping from
+        :func:`polyskills.database.list_installations`.
+
+    :rtype:   str
+    :returns: A multi-line, indented summary block for the
+        installation.
+    """
+
+    number = str(index + 1).zfill(2)
+    sha = row.get("resolved_commit_sha") or "n/a"
+
+    return "\n".join([
+        f"  >> {number}. {row['name']}  [{row['library']}]",
+        f"         remote  : {row['remote_url']} ({row['source_dir']})",
+        f"         path    : {row['install_path']}",
+        f"         commit  : {sha} (requested {row['requested_version']})",
+        f"         history : first {_formatTimestamp(row['first_fetched_at'])}"
+        f" | last {_formatTimestamp(row['last_updated_at'])}"
+        f" | {row['fetch_count']} fetch(es), last {row['last_status']}",
+    ])
+
+
+def _formatRecordDetail(detail : Dict[str, Any]) -> str:
+    """
+    Render a detailed installation block with its full event history.
+
+    :type  detail: Dict[str, Any]
+    :param detail: One detail mapping from
+        :func:`polyskills.database.get_installation`, including its
+        chronological ``events`` list.
+
+    :rtype:   str
+    :returns: A multi-line block describing the installation and every
+        recorded fetch attempt against it.
+    """
+
+    lines = [
+        f">> {detail['name']} [{detail['library']}]",
+        f"   remote   : {detail['remote_url']} ({detail['source_dir']})",
+        f"   path     : {detail['install_path']}",
+        f"   commit   : {detail.get('resolved_commit_sha') or 'n/a'}",
+        f"   first    : {_formatTimestamp(detail['first_fetched_at'])}",
+        f"   last     : {_formatTimestamp(detail['last_updated_at'])}",
+        f"   events ({len(detail['events'])}):",
+    ]
+
+    for event in detail["events"]:
+        sha = event.get("resolved_commit_sha") or "n/a"
+        lines.append(
+            f"     - {_formatTimestamp(event['occurred_at'])}"
+            f" {event['status']:7} {event['action']:9}"
+            f" {event['requested_version']} -> {sha}"
+            f" ({event['invoked_via']})"
+        )
+        if event.get("error"):
+            lines.append(f"       error: {event['error']}")
+
+    return "\n".join(lines)
+
+
+def _showRecords(name : Optional[str], db : Optional[str]) -> None:
+    """
+    Render the contents of the tracking database to the terminal.
+
+    Without ``name`` a per-installation summary is printed; with
+    ``name`` the full chronological fetch history of every matching
+    installation is shown. The command is read-only: when the database
+    file does not exist it reports the fact and returns without
+    creating it.
+
+    :type  name: Optional[str]
+    :param name: Extension leaf name to detail, or ``None`` to list
+        every tracked installation.
+
+    :type  db: Optional[str]
+    :param db: Explicit database path, or ``None`` for the canonical
+        ``~/.polyskills/records.db``.
+
+    :rtype:   None
+    :returns: Nothing - the records are printed as a side effect.
+    """
+
+    database_path = _expandUserPath(db) if db else default_database_path()
+
+    if not database_path.exists():
+        print(f"No tracking database found at `{database_path}`.")
+        print("Fetch an extension with 'polyskills manager ...' first.")
+        return None
+
+    if name:
+        details = get_installation(name, database_path = database_path)
+        if not details:
+            print(f"No tracked installation found for `{name}`.")
+            return None
+
+        for detail in details:
+            print(_formatRecordDetail(detail))
+        return None
+
+    rows = list_installations(database_path = database_path)
+    if not rows:
+        print(f"No tracked installations in `{database_path}`.")
+        return None
+
+    print(f"Tracked installations ({len(rows)}):")
+    for idx, row in enumerate(rows):
+        print(_formatRecordSummary(idx, row))
+    return None
+
+
+def _dispatch(args : argparse.Namespace) -> None:
+    """
+    Execute the parsed CLI command.
+
+    Separated from :func:`main` so that every transport or filesystem
+    error raised while contacting a remote bubbles up to a single
+    top-level handler that renders a concise message instead of a raw
+    traceback. Set ``POLYSKILLS_DEBUG`` in the environment to re-raise
+    the original exception for debugging.
+
+    :type  args: argparse.Namespace
+    :param args: Parsed command line arguments from :func:`buildParser`.
+    """
 
     # ? terminal commands: 'sources', 'tools' - print and exit early
     # ? these subparsers attach a ``func`` default; manager does not.
@@ -410,13 +787,34 @@ def main() -> None:
             print(output)
         return None
 
+    # ? dispatch the 'records' subcommand: read-only inspection of the
+    # ? local tracking database. It contacts no remote and carries no
+    # ? TLS flags, so it is handled before TLS verification is resolved.
+    if args.command == "records":
+        _showRecords(name = args.name, db = args.db)
+        return None
+
+    # ? resolve TLS verification shared by the 'list' and 'manager'
+    # ? subcommands before any remote request leaves the process
+    verify = _resolveVerify(args.no_verify, args.request_cert)
+    if args.no_verify:
+        import urllib3
+        urllib3.disable_warnings(
+            urllib3.exceptions.InsecureRequestWarning
+        )
+        print(
+            "[WARNING] TLS verification is disabled (--no-verify).",
+            file = sys.stderr
+        )
+
     # ? dispatch the 'list' subcommand: enumerate extensions and exit
     if args.command == "list":
         source = _expandUserPath(
             args.source or f"./{args.library}"
         ).as_posix()
         control = SourceControl(
-            pagination = args.pagination, token = args.token
+            pagination = args.pagination, token = args.token,
+            verify = verify
         )
 
         names = listExtensions(
@@ -453,17 +851,66 @@ def main() -> None:
 
     # ? dispatch to the concrete remote manager via the wrapper above
     control = SourceControl(
-        pagination = args.pagination, token = args.token
+        pagination = args.pagination, token = args.token,
+        verify = verify
     )
 
-    get(
-        remote = args.remote, name = args.name,
-        source = Path(args.source), destination = args.destination,
-        version = args.version, exists = args.exists,
-        control = control,
-    )
+    # ? record every fetch in the local tracking database unless the
+    # ? caller opted out with ``--no-tracking``; the recording is
+    # ? wrapped so a database fault never alters the fetch outcome or
+    # ? the process exit status.
+    tracking = not getattr(args, "no_tracking", False)
+    if tracking:
+        set_invocation_context("cli")
+
+    started = time.monotonic()
+    try:
+        get(
+            remote = args.remote, name = args.name,
+            source = Path(args.source), destination = args.destination,
+            version = args.version, exists = args.exists,
+            control = control,
+        )
+    except Exception as exc:
+        if tracking:
+            _recordFetch(
+                args, control, status = "failed", error = repr(exc),
+                duration_ms = int((time.monotonic() - started) * 1000),
+            )
+        raise
+    else:
+        if tracking:
+            _recordFetch(
+                args, control, status = "success", error = None,
+                duration_ms = int((time.monotonic() - started) * 1000),
+            )
 
     return None
+
+
+def main() -> None:
+    """
+    Entry point for the :mod:`polyskills` CLI. Parses the command line
+    arguments and dispatches to :func:`_dispatch`, funnelling expected
+    runtime failures into a clean, non-zero exit rather than a raw
+    traceback. Set ``POLYSKILLS_DEBUG`` to surface the full traceback.
+    """
+
+    args = buildParser().parse_args()
+
+    try:
+        return _dispatch(args)
+    except KeyboardInterrupt:
+        print(
+            "\n[ABORTED] Interrupted by the user.", file = sys.stderr
+        )
+        raise SystemExit(130)
+    except Exception as error:
+        if os.environ.get("POLYSKILLS_DEBUG"):
+            raise
+        print(f"[ERROR] {error}", file = sys.stderr)
+        raise SystemExit(1)
+
 
 if __name__ == "__main__":
     sys.exit(main())

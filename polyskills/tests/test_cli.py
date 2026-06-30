@@ -560,19 +560,23 @@ class TestMainDispatch(unittest.TestCase):
         )
 
 
-    def test_unsupported_remote_propagates_value_error(self) -> None:
+    def test_unsupported_remote_exits_with_clean_error(self) -> None:
         """
-        :func:`cli.main` must not swallow the :class:`ValueError`
-        raised by :func:`cli._resolveManager` for an unknown remote -
-        the surface error is the user's signal to use a supported
-        provider.
+        :func:`cli.main` must render the :class:`ValueError` raised by
+        :func:`cli._resolveManager` for an unknown remote as a concise
+        ``[ERROR]`` message on stderr and exit non-zero, instead of
+        leaking a raw traceback to the user.
         """
 
-        with self.assertRaises(ValueError):
-            _run_main([
-                "manager", "https://gitlab.com/foo/bar",
-                "--name", _NAME, "skills"
-            ])
+        code, _, err = _run_main([
+            "manager", "https://gitlab.com/foo/bar",
+            "--name", _NAME, "skills"
+        ])
+
+        self.assertEqual(code, 1)
+        self.assertIn("[ERROR]", err)
+        self.assertIn("not supported", err)
+        self.assertNotIn("Traceback", err)
 
 
 class TestDestinationExpansion(unittest.TestCase):
