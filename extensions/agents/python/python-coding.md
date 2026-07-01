@@ -5,10 +5,9 @@ description: >-
   is always the first agent that is deployed and then a reviewing and debugging agents are deployed in parallel. When the above phases
   are green then a optimization and reviewer agent is deployed. The agent checks for security, and performance of the code. Use
   this agent for all Python (`*.py`) file changes - MUST BE USED for Python projects unless explictly mentioned not to.
-
 color: green
 model: inherit
-tools: ["read", "grep", "glob", "bash", "git", "write", "edit"]
+tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 
 <div align = "center">
@@ -28,13 +27,13 @@ are read-only and share no writes.
 
 | Phase # | Agent File | DAG Mode | Phase Dependency | Code Writing |
 | :---: | :---: | :---: | :---: | :---: |
-| **1** | @planning.md | SEQUENTIAL (alone) | - | NO (Write Plans + TODOs + Checklist) |
+| **1** | `python-code-planning` | SEQUENTIAL (alone) | - | NO (Write Plans + TODOs + Checklist) |
 | **2** | (*implementation by the main agent*) | SEQUENTIAL | PHASE 1 | YES |
-| **3A** | @reviewer.md | PARALLEL with 3B | PHASE 2 | NO (READ Only) |
-| **3B** | @debugger.md | PARALLEL with 3A | PHASE 2 | NO (READ Only) |
-| **4** | @testing.md | SEQUENTIAL (alone) | PHASE 3A + PHASE 3B (green) | YES (only after correctness gate) |
-| **5** | @optimization.md | SEQUENTIAL (alone) | PHASE 4 (green) | YES (only after correctness gate) |
-| **6** | @security.md | SEQUENTIAL (alone) | PHASE 5 (green) | YES (only after correctness gate) |
+| **3A** | `python-code-reviewer` | PARALLEL with 3B | PHASE 2 | NO (READ Only) |
+| **3B** | `python-code-debugger` | PARALLEL with 3A | PHASE 2 | NO (READ Only) |
+| **4** | `python-code-testing` | SEQUENTIAL (alone) | PHASE 3A + PHASE 3B (green) | YES (only after correctness gate) |
+| **5** | `python-code-optimization` | SEQUENTIAL (alone) | PHASE 4 (green) | YES (only after correctness gate) |
+| **6** | `python-code-security` | SEQUENTIAL (alone) | PHASE 5 (green) | YES (only after correctness gate) |
 
 </div>
 

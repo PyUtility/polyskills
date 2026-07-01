@@ -7,10 +7,8 @@ description: >-
   closes. It never weakens a control to make code pass and never invents findings it cannot prove. Do not invoke before
   'python-code-planning', and never run it in parallel with reviewer, debugger, or optimization. Trigger phrases: "security
   review", "audit", "is this safe", "vulnerability", "secrets", "injection", "harden this".
-
-color: black
-
-tools: ["read", "grep", "glob", "bash", "git", "write", "edit"]
+color: orange
+tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 
 <div align = "center">

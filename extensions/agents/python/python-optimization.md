@@ -8,10 +8,8 @@ description: >-
   security audit. Do not invoke before 'python-code-planning'; never run in parallel with reviewer or debugger - they may
   invalidate the optimizations. Trigger phrases: "optimize", "make it faster", "reduce memory", "profile", "speed up",
   "tighten this code", "DRY this up".
-
 color: purple
-
-tools: ["read", "grep", "glob", "bash", "git", "write", "edit"]
+tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 
 <div align = "center">

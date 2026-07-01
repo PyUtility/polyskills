@@ -7,10 +7,8 @@ description: >-
   Run this agent in PARALLEL with 'python-code-reviewer' once implementation lands; both are non-mutating investigators with
   no shared writes. Do not invoke before 'python-code-planning' has produced a plan. Trigger phrases: "debug", "why is this
   failing", "stack trace", "tests are red", "reproduce", "bisect", "root cause".
-
 color: red
-
-tools: ["read", "grep", "glob", "bash", "git"]
+tools: Read, Grep, Glob, Bash
 ---
 
 <div align = "center">

@@ -7,12 +7,9 @@ description: >-
   clarifying questions when confidence is below 95%. Always invoke this agent before 'python-code-reviewer',
   'python-code-debugger', 'python-code-testing', 'python-code-optimization', or 'python-code-security'. Trigger phrases:
   "plan", "design", "scope out", "break down", "architect", "how should I approach".
-
 color: blue
 model: opus
-effort: xhigh
-
-tools: ["read", "grep", "glob", "git"]
+tools: Read, Grep, Glob, Bash
 ---
 
 <div align = "center">

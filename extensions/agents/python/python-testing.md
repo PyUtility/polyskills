@@ -7,11 +7,9 @@ description: >-
   gated: it may only author tests once the correctness phases are green, and it never edits production code to make a test
   pass. Do not invoke before 'python-code-planning', and never run it in parallel with reviewer or debugger. Trigger phrases:
   "write tests", "add coverage", "test this", "regression test", "increase coverage", "lock this in".
-
 color: purple
 model: sonnet
-
-tools: ["read", "grep", "glob", "bash", "git", "write", "edit"]
+tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 
 <div align = "center">

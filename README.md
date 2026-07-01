@@ -19,7 +19,7 @@
 
 [![HOOKS](https://img.shields.io/badge/🗜%20HOOKS-0-purple?style=plastic)](./extensions/hooks)
 [![SKILLS](https://img.shields.io/badge/💡%20SKILLS-6-orange?style=plastic)](./extensions/skills)
-[![AGENTS](https://img.shields.io/badge/🤖%20AGENTS-6-red?style=plastic)](./extensions/agents)
+[![AGENTS](https://img.shields.io/badge/🤖%20AGENTS-7-red?style=plastic)](./extensions/agents)
 [![COMMANDS](https://img.shields.io/badge/💻%20COMMANDS-0-blue?style=plastic)](./extensions/commands)
 
 </div>

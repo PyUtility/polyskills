@@ -7,10 +7,8 @@ description: >-
   reports findings. Run this agent in PARALLEL with 'python-code-debugger' once implementation lands; both are non-mutating
   investigators. Do not invoke before 'python-code-planning' has produced a plan. Trigger phrases: "review", "code review",
   "check my changes", "is this PR ready", "audit the diff".
-
 color: red
-
-tools: ["read", "grep", "glob", "git"]
+tools: Read, Grep, Glob, Bash
 ---
 
 <div align = "center">
