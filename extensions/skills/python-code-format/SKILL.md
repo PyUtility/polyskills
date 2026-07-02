@@ -195,6 +195,8 @@ Rules for docstring documentation:
   * For attribute annotation use `:type  param: <type>` (two spaces before param name for alignment) followed by `:param arg: ...`.
     Always place one blank line between description and param block.
   * `:rtype:` then `:return:` for return documentation. Also, use `:raises ...:` to document errors (if any) for the function.
+  * If the function returns `None` (i.e. annotated `-> None`), omit the `:rtype:` and `:returns:` block entirely - do not
+    document a `None` return.
   * Use ``backticks`` for inline code references in docstrings. Use `:mod:`, `:class:`, `:func:` block as in reStructuredText
     for cross-references.
 
