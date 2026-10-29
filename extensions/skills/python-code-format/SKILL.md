@@ -1,10 +1,10 @@
 ---
 name: python-code-format
 description: >-
-    Governs all Python code formatting, editing, reviews, modification, and creation from scratch. Always read the file
-    in full before writing or modifying Python code, even for a small change. Use this skill when a user asks to create,
-    edit, update, review or modify any content of a '*.py' file, or any Python code in a project that references this
-    skill.
+  Governs all Python code formatting, editing, reviews, modification, and creation from scratch. Always read the file in
+  full before writing or modifying Python code, even for a small change. Use this skill when a user asks to create,
+  edit, update, review or modify any content of a '*.py' file, or any Python code in a project that references this
+  skill.
 ---
 
 <div align = "center">
@@ -34,6 +34,8 @@ Never skip reading the skill or its resources even for small changes.
 
 ## Naming Convention
 
+<div align = "center">
+
 | Element/Attribute Name | Naming Convention | Example Names | Additional Remark(s) |
 | :---: | :---: | :---: | --- |
 | Module Files | `snake_case` | `calendar.py` | Try to use single word names. |
@@ -43,6 +45,8 @@ Never skip reading the skill or its resources even for small changes.
 | Variable Names | `snake_case` | `first_name` | |
 | Constants or ENUM Members | `SCREAMING_SNAKE_CASE` | `MONDAY` | |
 | Loop/Comprehension Variables | Short Meaningful Name | `cur` `idx` `nxt` `key` `value` | |
+
+</div>
 
 IMPORTANT: If any code file or module is following a different naming convention (like `camelCase`) then preserve the
 original format and write accordingly.
@@ -131,7 +135,7 @@ age        : int = 30
 
 ### Docstring Format
 
-Use `reStructuredText` style docstring always. Ensure that you always use "-" instead of "—" (never use em dash -
+Use `reStructuredText` style docstring always. Ensure that you always use `-` instead of `—` (never use em dash -
 mandatory). Examples of docstring style for different sections are as below:
 
 ```python

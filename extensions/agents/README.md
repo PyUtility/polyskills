@@ -2,15 +2,15 @@
 
 # AI Agents Extensions
 
-[![Python Coding Agents](https://img.shields.io/badge/Python-%20Coding%20Agents-003B57?style=plastic&logo=python)](python/python-coding.md)
+[![Python Coding Agents](https://img.shields.io/badge/Python-%20Coding%20Agents-3776AB?style=plastic&logo=python)](python/python-coding.md)
 
 </div>
 
 <div align = "justify">
 
 Agents are *task-scoped specialists* that an orchestrator (Claude Code, Codex, Cursor, and the like) delegates work to
-during a multi-step code change. Where a *skill* teaches the model **how** to shape code, an *agent* teaches it **when to
-think**, **how to think**, and **with which discipline**. The agents here are grouped by programming language into a
+during a multi-step code change. Where a *skill* teaches the model **how** to shape code, an *agent* teaches it **when
+to think**, **how to think**, and **with which discipline**. The agents here are grouped by programming language into a
 directory such as [python/](python/), and each agent ships as a `<language>-<usage>.md` file with YAML frontmatter that
 sets its default model, color, and tool grants, followed by the orchestration it must follow.
 
@@ -20,6 +20,8 @@ A skill is loaded on demand and answers a formatting or shaping question. An age
 when to act, what evidence it needs, and what it refuses to do. Each agent file opens with frontmatter that Claude Code
 reads to register and route it.
 
+<div align = "center">
+
 | Frontmatter Key | Purpose | Example |
 | :---: | --- | :---: |
 | `name` | The identifier you invoke or delegate to | `python-code-planning` |
@@ -27,6 +29,8 @@ reads to register and route it.
 | `tools` | Comma-separated tool grants; omit to inherit all | `Read, Grep, Glob, Bash` |
 | `model` | `opus`, `sonnet`, `haiku`, or `inherit` | `opus` |
 | `color` | Label color in the agent picker | `blue` |
+
+</div>
 
 The body after the frontmatter is the agent's operating manual: when to run, its mission, the format its findings take,
 and the confidence bar it holds itself to. Read-only agents (planning, reviewer, debugger) carry no `Write` or `Edit`
@@ -44,7 +48,10 @@ grant, so they can investigate but never mutate the tree.
 
 ### The Python Agent Suite
 
-Seven agents cover a Python change end to end. Phases `3A` and `3B` run at the same time; every other phase is sequential.
+Seven agents cover a Python change end to end. Phases `3A` and `3B` run at the same time; every other phase is
+sequential.
+
+<div align = "center">
 
 | Agent | Role | Phase | Writes Code |
 | :---: | --- | :---: | :---: |
@@ -55,6 +62,8 @@ Seven agents cover a Python change end to end. Phases `3A` and `3B` run at the s
 | `python-code-testing` | Locks correctness in with deterministic tests | 4 | Yes |
 | `python-code-optimization` | Improves speed, memory, or I/O behind the correctness gate | 5 | Yes |
 | `python-code-security` | Runs the defensive security audit, the terminal gate | 6 | Yes |
+
+</div>
 
 ### Orchestration Pipeline
 
@@ -70,15 +79,15 @@ because both are read-only and share no writes.
 6  python-code-security        defensive audit, terminal gate
 ```
 
-A subagent cannot spawn other subagents, so the DAG in [python-coding.md](python/python-coding.md) is a specification the
-main session follows, not something one agent runs on its own. The gate between phases is the point: the optimizer refuses
-to touch code the reviewer and debugger have not cleared, and the security audit runs last, on code that is already
-correct and already fast.
+A subagent cannot spawn other subagents, so the DAG in [python-coding.md](python/python-coding.md) is a specification
+the main session follows, not something one agent runs on its own. The gate between phases is the point: the optimizer
+refuses to touch code the reviewer and debugger have not cleared, and the security audit runs last, on code that is
+already correct and already fast.
 
 ## 📦 Registering Agents
 
-Unlike skills, agents need no entry in `settings.json`. Claude Code discovers them from two directories and registers each
-by its frontmatter `name`:
+Unlike skills, agents need no entry in `settings.json`. Claude Code discovers them from two directories and registers
+each by its frontmatter `name`:
 
   * `~/.claude/agents/` - personal agents, available in every project.
   * `<project>/.claude/agents/` - project agents, checked in alongside the code they serve.

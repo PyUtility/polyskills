@@ -19,7 +19,7 @@ reach for structure here, not for theatrics.
 
 Pick the technique that fits the task. Most are cheap; a few cost real tokens, noted in the row.
 
-</div>
+<div align = "center">
 
 | Technique | Use When | Cost |
 | :---: | --- | :---: |
@@ -31,7 +31,7 @@ Pick the technique that fits the task. Most are cheap; a few cost real tokens, n
 | Evaluator-optimizer | Quality matters and you can score it: generate, score, revise, repeat to the cap | medium |
 | Extended thinking | Genuinely hard, multi-step reasoning only. It can hurt easy tasks, so do not default to it | high |
 
-<div align = "justify">
+</div>
 
 Use the cheapest technique that fits. Self-consistency and extended thinking earn their cost only on
 hard problems where a wrong answer is expensive.
@@ -42,7 +42,7 @@ Score the result on five dimensions, 0 to 10 each. The bar is every dimension at
 the work against these fixed criteria; never rewrite the criteria to fit the work, and never degrade
 the work to move a number.
 
-</div>
+<div align = "center">
 
 | Dimension | Measures | Passing At 8 | Scores 0 When |
 | :---: | --- | --- | --- |
@@ -52,7 +52,7 @@ the work to move a number.
 | Efficiency | Avoids needless waste | No obvious redundancy, and complexity fits the problem | The work is clearly wasteful or over-engineered |
 | Edge-case coverage | Boundary and failure cases handled | Foreseeable edge cases are handled or explicitly flagged | A likely edge case silently breaks the result |
 
-<div align = "justify">
+</div>
 
 The accuracy gate sits above the score and is a hard pass or fail. Any round that introduces a
 factual error, breaks a test, regresses working behavior, alters a true claim, or reports a result
@@ -73,11 +73,11 @@ from a fresh subagent or `/code-review` rather than trusting one self-score.
 
 A Standard task: add a helper that returns the median of a list of numbers, with tests.
 
-Round 1. The draft returns the middle element by index. Self-scoring against the rubric: Clarity 9,
-Efficiency 9, Completeness 7, Edge-case coverage 6 (no even-length or empty-list handling), Correctness fails. The accuracy gate catches it:
-the new test for an even-length list fails, because the median of an even count is the average of the
-two middle values, not a single element. Gate result is FAIL, so the round does not pass no matter
-what the other numbers say. Highest-leverage fix: handle even-length input and the empty list.
+Round 1. The draft returns the middle element by index. Self-scoring against the rubric: Clarity 9, Efficiency 9,
+Completeness 7, Edge-case coverage 6 (no even-length or empty-list handling), Correctness fails. The accuracy gate
+catches it: the new test for an even-length list fails, because the median of an even count is the average of the two
+middle values, not a single element. Gate result is FAIL, so the round does not pass no matter what the other numbers
+say. Highest-leverage fix: handle even-length input and the empty list.
 
 Round 2. The helper sorts, averages the two central values for even counts, and raises on empty
 input; tests cover odd, even, single, and empty. Re-score: Correctness 9 (tests pass), Completeness

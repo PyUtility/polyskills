@@ -17,12 +17,16 @@ is published as a plugin via [`.claude-plugin/marketplace.json`](./.claude-plugi
 The canonical skills live under [`extensions/skills/`](./extensions/skills/). Each is a standard
 `SKILL.md` (with YAML frontmatter) and applies only when its description matches the task at hand.
 
+<div align = "center">
+
 | 🔖 Skill | 🎯 Applies When |
-| :--- | :--- |
+| :---: | --- |
 | `git-commiter` | Creating, amending, or writing any git commit message in this repository. |
 | `markdown-format` | Creating, editing, or reviewing any `*.md` file (README, SKILL, AGENT, docs). |
 | `python-code-format` | Creating, editing, or reviewing any `*.py` file or Python code. |
 | `sql-code-format` | Creating, editing, or reviewing any `*.sql` file (PostgreSQL flavour). |
+
+</div>
 
 > [!NOTE]
 > The Python *agent suite* under [`extensions/agents/python/`](./extensions/agents/python/) targets

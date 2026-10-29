@@ -6,8 +6,8 @@
 
 <div align = "justify">
 
-Inherit the original skill, and extend to include section wise additional rules for general purpose formatting of the SQL
-codes. These formats are applicable for all type of database flavors.
+Inherit the original skill, and extend to include section wise additional rules for general purpose formatting of the
+SQL codes. These formats are applicable for all type of database flavors.
 
 ## DDL Command Structure
 
@@ -78,8 +78,8 @@ Use the below sample template to generate DML commands when user asks for any mo
 
 ### INSERT Statements
 
-Use the following insert statement template to generate when asked for modification or create from scratch. If the field names
-are limited and all the field name can be managed into one line of maximum 120 length then use the below template.
+Use the following insert statement template to generate when asked for modification or create from scratch. If the field
+names are limited and all the field name can be managed into one line of maximum 120 length then use the below template.
 
 ```sql
 INSERT INTO <schema-name>.<table-name> (<field>, <field>, ...) VALUES
@@ -88,7 +88,8 @@ INSERT INTO <schema-name>.<table-name> (<field>, <field>, ...) VALUES
     ...;
 ```
 
-If there are too many field names, and cannot be fit to a line of less than 120 characters then break the line like below:
+If there are too many field names, and cannot be fit to a line of less than 120 characters then break the line like
+below:
 
 ```sql
 INSERT INTO <schema-name>.<table-name> (
@@ -106,18 +107,18 @@ directory like `database/schema/<schema>/seed/<filename>.sql` where `<filename>`
 
 ## Rule Sets
 
-The following rules are applicable across all types of database flavors and must be maintained. If the file under modification
-does not follow the rules, modify the content along with the requested changes.
+The following rules are applicable across all types of database flavors and must be maintained. If the file under
+modification does not follow the rules, modify the content along with the requested changes.
 
-  * All SQL reserved words and built-in functions must be written in `UPPERCASE`. This applies to clauses, operators, data
-    types, and functions. User-defined object names (tables, columns, aliases, schemas) must be in `snake_case`.
+  * All SQL reserved words and built-in functions must be written in `UPPERCASE`. This applies to clauses, operators,
+    data types, and functions. User-defined object names (tables, columns, aliases, schemas) must be in `snake_case`.
   * Limit all SQL lines to a maximum of **80 characters**, break long expressions across multiple lines using the
     leading-comma style (`, expression`) consistent with the column list style in `SKILL.md`. Long `WHERE` conditions,
     `JOIN` predicates, and function argument lists should each go on their own indented line.
-  * Always place a single space on both sides of comparison and assignment operators (`=`, `<>`, `!=`, `<`, `>`, `<=`, `>=`)
-    and arithmetic operators (`+`, `-`, `*`, `/`).
-  * Always use `IS NULL` or `IS NOT NULL` to test for `NULL` values. Never use `= NULL` or `<> NULL` as these comparisons
-    always evaluate to `UNKNOWN` in SQL.
+  * Always place a single space on both sides of comparison and assignment operators (`=`, `<>`, `!=`, `<`, `>`, `<=`,
+    `>=`) and arithmetic operators (`+`, `-`, `*`, `/`).
+  * Always use `IS NULL` or `IS NOT NULL` to test for `NULL` values. Never use `= NULL` or `<> NULL` as these
+    comparisons always evaluate to `UNKNOWN` in SQL.
   * All SQL file must have a consistent 4 spaces indentation style.
   * Do not add inline comments unless there is a new field added or removed or functionality is changed.
 

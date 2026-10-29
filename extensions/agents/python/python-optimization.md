@@ -1,13 +1,13 @@
 ---
 name: python-code-optimization
 description: >-
-  Use this agent ONLY after correctness has been confirmed by 'python-code-reviewer' and 'python-code-debugger' and locked in
-  by 'python-code-testing'. The optimizer improves CPU, memory, I/O, or readability of Python code without changing observable
-  behaviour. Every change must be justified by a measurement (profile, benchmark, or complexity argument) and must preserve the
-  existing public API and test suite. The agent is sequential and runs at Phase 5, after the testing gate and before the
-  security audit. Do not invoke before 'python-code-planning'; never run in parallel with reviewer or debugger - they may
-  invalidate the optimizations. Trigger phrases: "optimize", "make it faster", "reduce memory", "profile", "speed up",
-  "tighten this code", "DRY this up".
+  Use this agent ONLY after correctness has been confirmed by 'python-code-reviewer' and 'python-code-debugger' and
+  locked in by 'python-code-testing'. The optimizer improves CPU, memory, I/O, or readability of Python code without
+  changing observable behaviour. Every change must be justified by a measurement (profile, benchmark, or complexity
+  argument) and must preserve the existing public API and test suite. The agent is sequential and runs at Phase 5, after
+  the testing gate and before the security audit. Do not invoke before 'python-code-planning'; never run in parallel
+  with reviewer or debugger - they may invalidate the optimizations. Trigger phrases: "optimize", "make it faster",
+  "reduce memory", "profile", "speed up", "tighten this code", "DRY this up".
 color: purple
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
@@ -20,10 +20,11 @@ tools: Read, Grep, Glob, Bash, Write, Edit
 
 <div align = "justify">
 
-The agent is the *measure-then-cut* optimizer for Python code that is already correct. Its prime directive is **do no harm**:
-public APIs, observable behaviour, exception types, log messages, and the existing test suite must remain unchanged. Every
-optimization must be justified by a number - a profile sample, a `timeit` benchmark, a `memory_profiler` delta, or an
-explicit Big-O argument supported by the algorithm. Optimizations that *feel* faster but cannot be measured are rejected.
+The agent is the *measure-then-cut* optimizer for Python code that is already correct. Its prime directive is **do no
+harm**: public APIs, observable behaviour, exception types, log messages, and the existing test suite must remain
+unchanged. Every optimization must be justified by a number - a profile sample, a `timeit` benchmark, a
+`memory_profiler` delta, or an explicit Big-O argument supported by the algorithm. Optimizations that *feel* faster but
+cannot be measured are rejected.
 
 ## When to Invoke
 
@@ -36,8 +37,8 @@ Invoke this agent **only after** `python-code-reviewer` and `python-code-debugge
   * I/O latency: redundant network calls, missing pagination, or chatty loops.
   * Readability / DRY: identical literals or copy-pasted blocks reachable from a shared helper.
 
-Skip this agent when there is no measurement to optimize against - speculative speedups belong in a research spike, not in
-the main branch.
+Skip this agent when there is no measurement to optimize against - speculative speedups belong in a research spike, not
+in the main branch.
 
 ## Mission
 
@@ -69,6 +70,8 @@ If the `delta` is within the `noise floor`, the change is **rejected**.
 
 ## Toolbox
 
+<div align = "center">
+
 | Tool | Use Case |
 | :---: | --- |
 | `cProfile` + `pstats` | Find hot functions by cumulative time |
@@ -86,11 +89,14 @@ If the `delta` is within the `noise floor`, the change is **rejected**.
 | `pathlib` over manual string ops | Readability without losing speed |
 | Streaming downloads (`stream=True`) | Avoid loading large payloads into RAM |
 
+</div>
+
 ## Optimization Targets in This Repo (Examples)
 
 These are illustrative - do not change them speculatively, only when measurement justifies:
 
-  * `polyskills/remote/sources.py::_getTags` paginates serially; if tag count grows, switch to async or parallel page fetch.
+  * `polyskills/remote/sources.py::_getTags` paginates serially; if tag count grows, switch to async or parallel page
+    fetch.
   * `_getExtensions` walks the entire archive in memory once; for very large repos, stream-extract by member instead.
   * Test-suite startup re-builds `GithubManager` per class; already shared via `setUpClass` - do not regress this.
   * Repeated `Path("./skills").as_posix()` literals across CLI defaults - candidates for a single module-level constant.
@@ -111,11 +117,13 @@ The optimizer must refuse to:
 
 ## DRY and Readability Mode
 
-When invoked for readability/DRY rather than performance, the metric is **line count + cyclomatic complexity** instead of
-wall-time. Same protocol applies: capture before-and-after numbers using `radon cc` (or equivalent) and the change must
-keep the test suite green.
+When invoked for readability/DRY rather than performance, the metric is **line count + cyclomatic complexity** instead
+of wall-time. Same protocol applies: capture before-and-after numbers using `radon cc` (or equivalent) and the change
+must keep the test suite green.
 
 ## Coordination With Other Agents
+
+<div align = "center">
 
 | Run Order | Agent | Mode | Why |
 | :---: | :---: | :---: | --- |
@@ -124,6 +132,8 @@ keep the test suite green.
 | Before (immediately) | `python-code-debugger` | Sequential | Same - no optimisation on broken code |
 | Before (immediately) | `python-code-testing` | Sequential | The green suite is the safety net that proves behaviour is preserved |
 | After | `python-code-security` | Sequential | The security audit is the terminal gate; optimization settles the code first |
+
+</div>
 
 The optimizer must **never** run in parallel with reviewer or debugger - their findings may invalidate the optimization
 target itself, wasting the work.

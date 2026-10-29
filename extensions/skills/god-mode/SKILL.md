@@ -90,7 +90,8 @@ times. Models tend to over-delegate, so fan-out is a deliberate choice you justi
 
 ## Complexity Classification And Scope Mapping
 
-The classification made in Phase 1 governs the entire protocol. Use this table as your single authoritative reference for what applies at each level:
+The classification made in Phase 1 governs the entire protocol. Use this table as your single authoritative reference
+for what applies at each level:
 
 <div align = "center">
 
@@ -126,7 +127,7 @@ Reuse the specialists. Do not reimplement what a skill already does.
 <div align = "center">
 
 | Phase | Compose With | Why |
-| :---: | --- | --- |
+| :---: | :---: | --- |
 | Research | `/deep-research` | Multi-source, fact-checked, cited research with built-in verification |
 | Validate | `/verify` | Run the app and observe real behavior instead of claiming it works |
 | Audit | `/code-review` | Correctness bugs and reuse or efficiency findings on the diff |
@@ -142,7 +143,8 @@ If a composed skill is unavailable, returns an error, or produces no output:
 
   1. **Note the gap clearly** in the Report phase, naming the missing skill and what it would have checked.
   2. **Describe the manual substitute** you performed instead: what you looked for and what you checked.
-  3. **Mark the work as unverified** on that dimension. Do not claim the score if the specialist skill was supposed to run.
+  3. **Mark the work as unverified** on that dimension. Do not claim the score if the specialist skill was supposed to
+     run.
   4. **For Light tasks**, skip the specialist audit; the gap is acceptable for the classification.
   5. **For Standard or Deep tasks**, the gap is a residual risk; state it plainly.
 

@@ -1,19 +1,24 @@
-<h1 align = "center">CHANGELOG</h1>
+<div align = "center">
+
+# CHANGELOG
+
+</div>
 
 <div align = "justify">
 
-All notable changes to this project will be documented in this file. The format is based on
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [PEP0440](https://peps.python.org/pep-0440/)
-styling guide. For full details, see the [commit logs](https://github.com/PyUtility/autoholidays/commits).
+All notable changes to this project will be documented in this file. The format is based on [Keep a
+Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
+[PEP0440](https://peps.python.org/pep-0440/) styling guide. For full details, see the [commit
+logs](https://github.com/PyUtility/autoholidays/commits).
 
 ## `PEP0440` Styling Guide
 
 <details>
 <summary>Click to open <code>PEP0440</code> Styilng Guide</summary>
 
-Packaging for `PyPI` follows the standard PEP0440 styling guide and is implemented by the **`packaging.version.Version`** class. The other
-popular versioning scheme is [`semver`](https://semver.org/), but each build has different parts/mapping.
-The following table gives a mapping between these two versioning schemes:
+Packaging for `PyPI` follows the standard PEP0440 styling guide and is implemented by the
+**`packaging.version.Version`** class. The other popular versioning scheme is [`semver`](https://semver.org/), but each
+build has different parts/mapping. The following table gives a mapping between these two versioning schemes:
 
 <div align = "center">
 
@@ -36,15 +41,17 @@ this [link](https://python-semver.readthedocs.io/en/latest/advanced/convert-pypi
 
 ## Release Note(s)
 
-The release notes are documented, the list of changes to each different release are documented. The `major.minor` patch are indicated
-under `h3` tags, while the `micro` and "version identifiers" are listed under `h4` and subsequent headlines.
+The release notes are documented, the list of changes to each different release are documented. The `major.minor` patch
+are indicated under `h3` tags, while the `micro` and "version identifiers" are listed under `h4` and subsequent
+headlines.
 
 <details>
 <summary>Click to open <code>Legend Guidelines</code> for the Project CHANGELOG.md File</summary>
 
   * 🎉 - **Major Feature** : something big that was not available before.
   * ✨ - **Feature Enhancement** : a miscellaneous minor improvement of an existing feature.
-  * 🛠️ - **Patch/Fix** : something that previously didn’t work as documented – or according to reasonable expectations – should now work.
+  * 🛠️ - **Patch/Fix** : something that previously didn’t work as documented – or according to reasonable expectations –
+    should now work.
   * ⚙️ - **Code Efficiency** : an existing feature now may not require as much computation or memory.
   * 💣 - **Code Refactoring** : a breakable change often associated with `major` version bump.
 
@@ -67,7 +74,7 @@ project and machine. The `v2.0.0` CLI surface is kept intact.
 > recorded in `~/.polyskills/records.db` unless `--no-tracking` is passed. The sub-command surface
 > and existing call sites are unchanged.
 
-#### 🎉 Major Features
+#### Major Features
 
   * **Local tracking database.** A new `polyskills.database` sub-package records every fetch
     into `~/.polyskills/records.db` (resolved OS-independently via `Path.home()`). The schema
@@ -80,7 +87,7 @@ project and machine. The `v2.0.0` CLI surface is kept intact.
     install location, resolved commit SHA, and first-fetched / last-updated timestamps. It
     never creates the database when it is absent.
 
-#### ✨ Feature Enhancements
+#### Feature Enhancements
 
   * **Configurable TLS verification.** Verification defaults to secure (`verify=True`, honouring
     `REQUESTS_CA_BUNDLE` / `SSL_CERT_FILE`). Two new mutually exclusive flags tune it: `--no-verify`
@@ -102,10 +109,10 @@ project and machine. The `v2.0.0` CLI surface is kept intact.
     read-only home directory, or a locked database degrades to a single warning and never
     alters the fetch outcome or the process exit status.
 
-#### 🛠️ Security Hardening & Fixes
+#### Security Hardening & Fixes
 
-  * **TLS no longer disabled.** The hard-coded `verify=False` on every remote request — a
-    man-in-the-middle exposure — is removed in favour of the configurable policy above; the
+  * **TLS no longer disabled.** The hard-coded `verify=False` on every remote request - a
+    man-in-the-middle exposure - is removed in favour of the configurable policy above; the
     tracking database's `resolveCommit` request honours the same policy.
   * **Archive path-traversal guard.** Each tarball member is resolved against the destination subtree
     and rejected with `ExtractionError` if it escapes; non file/dir members (symlinks, devices) are
@@ -120,7 +127,7 @@ project and machine. The `v2.0.0` CLI surface is kept intact.
   * **Version & dependencies.** `__version__` is bumped to `v2.1.0`, the unused `packaging` runtime
     dependency is dropped, and `sqlalchemy>=2.0` is added for the tracking database.
 
-#### 🧪 Testing & CI
+#### Testing & CI
 
   * **Hermetic-by-default suite.** The default `unittest discover` run is now fully offline; the
     live-network tests are opt-in via `POLYSKILLS_RUN_LIVE=1` (with `POLYSKILLS_NO_VERIFY=1` for a
@@ -137,13 +144,13 @@ project and machine. The `v2.0.0` CLI surface is kept intact.
     tag kept as a comment), a new `security.yml` runs `bandit` and `pip-audit`, and least-privilege
     `permissions` are declared on the linting and release-build jobs.
 
-#### 💣 Code Refactoring & Internals
+#### Code Refactoring & Internals
 
   * Superseded and removed the earlier stdlib-`sqlite3` tracker prototype in favour of the
     SQLAlchemy `polyskills.database` package; its development history is retained as a reachable
     git ancestor through the merge into this line.
 
-#### 📦 Installation
+#### Installation
 
 ```shell
 $ pip install "polyskills==2.1.0"
@@ -179,9 +186,9 @@ can be registered via the `_SOURCE_MANAGERS` registry without touching the dispa
 > list, manager} ...`). The `git tag skillName@vX.Y.Z` discovery convention from `v1.x` is also gone:
 > extensions are now resolved as directories under a configurable `--source` (e.g. `./skills`,
 > `./agents`) and pinned with `--version` (a tag, branch, or commit SHA). Old scripts must be
-> rewritten — see the migration table at the end of this section.
+> rewritten - see the migration table at the end of this section.
 
-#### 💣 Breaking Changes
+#### Breaking Changes
 
   * **CLI surface rewritten.** The flat `polyskills <remote> --get-skills | --update <name>
     --directory ...` interface from `v1.0.0` has been removed. The new CLI is structured into
@@ -208,10 +215,10 @@ can be registered via the `_SOURCE_MANAGERS` registry without touching the dispa
     git history was removed during the refactor; users pinning to a specific `v1.x` SHA must
     fetch the legacy tarball from PyPI.
 
-#### 🎉 Major Features
+#### Major Features
 
-  * **Multi-library manager.** First-class support for four extension types — `skills`, `agents`,
-    `commands`, `hooks` — selected as the trailing `LIBRARY` token of `polyskills manager` and
+  * **Multi-library manager.** First-class support for four extension types - `skills`, `agents`,
+    `commands`, `hooks` - selected as the trailing `LIBRARY` token of `polyskills manager` and
     `polyskills list`. Each maps to its own default source/destination directory.
   * **`list` sub-command.** `polyskills list <remote> <LIBRARY>` enumerates the available
     extensions on a remote (without downloading any content) so users can discover valid
@@ -221,16 +228,16 @@ can be registered via the `_SOURCE_MANAGERS` registry without touching the dispa
   * **Pluggable remote providers.** `polyskills.remote.sources` exposes an abstract
     `SourceManager` with a concrete `GithubManager` implementation, wired through the
     `_SOURCE_MANAGERS` registry in `polyskills.cli`. New providers light up automatically once
-    registered — no dispatcher changes required.
+    registered - no dispatcher changes required.
   * **Tarball-based extraction.** Extension contents are fetched as a single repository tarball
     (rather than per-file REST calls), which dramatically reduces request count for large
     libraries and stays well below GitHub's unauthenticated rate limit.
   * **Bundled extensions library.** The repository now ships a curated set of first-party
-    extensions under `extensions/` — agents (`python-code-reviewer`, `python-code-planning`,
+    extensions under `extensions/` - agents (`python-code-reviewer`, `python-code-planning`,
     `python-code-debugger`, `python-code-optimization`) and skills (`sql-code-format`,
-    `markdown-format`, `git-commiter`) — exercised by the integration test suite.
+    `markdown-format`, `git-commiter`) - exercised by the integration test suite.
 
-#### ✨ Feature Enhancements
+#### Feature Enhancements
 
   * **Shared remote controls.** `--pagination`, `--token`, and `--version` are defined once via
     an `argparse` parent parser (`buildRemoteControls()`) and inherited by every remote-touching
@@ -241,7 +248,7 @@ can be registered via the `_SOURCE_MANAGERS` registry without touching the dispa
     (45 cases as of this release) from the package directory regardless of the caller's
     working directory, making the entry-point CI-friendly out of the box.
 
-#### 🛠️ Patches & Fixes
+#### Patches & Fixes
 
   * **`~` and `$VAR`/`%VAR%` expansion.** `polyskills manager ... --destination
     ~/.claude/skills/<name>` previously created a literal `~` directory next to the current
@@ -260,7 +267,7 @@ can be registered via the `_SOURCE_MANAGERS` registry without touching the dispa
     `SourceManager.get(mode='extensions', ...)` with the documented keyword payload
     (`name`, `source`, `destination`, `version`, `formatter`, `exists`). _(commit `2275761`)_
 
-#### 🧪 Testing & CI
+#### Testing & CI
 
   * **Hermetic CLI suite (`test_cli.py`).** Argparse construction, `_resolveManager` registry
     behaviour, the `cli.get` wrapper contract, and end-to-end `cli.main` dispatch are all
@@ -274,7 +281,7 @@ can be registered via the `_SOURCE_MANAGERS` registry without touching the dispa
   * **GitHub Actions workflow.** A CI workflow (`.github/`) runs `python -m polyskills.tests`
     on every push, gating merges on a green suite (45/45 as of `v2.0.0`).
 
-#### ⚙️ Code Refactoring & Internals
+#### Code Refactoring & Internals
 
   * Promoted `_extract()` to `polyskills.tests.base` so every concrete test case inherits the
     same tarball-extraction harness (commits `de5880f`, `adf7f45`).
@@ -283,7 +290,7 @@ can be registered via the `_SOURCE_MANAGERS` registry without touching the dispa
   * Refactored `SourceManager.get` to dispatch on a `mode` keyword (`list` vs. `extensions`)
     so the CLI never branches on provider type (commits `63c4382`, `d3abef9`, `811bc69`).
 
-#### 📦 Installation
+#### Installation
 
 ```shell
 $ pip install "polyskills==2.0.0"
@@ -298,12 +305,12 @@ $ polyskills manager https://github.com/<owner>/<repo> \
     skills
 ```
 
-#### 🔁 `v1.x` → `v2.0.0` Migration
+#### `v1.x` → `v2.0.0` Migration
 
 <div align = "center">
 
 | `v1.0.0` Invocation | `v2.0.0` Equivalent |
-| :--- | :--- |
+| :---: | :---: |
 | `polyskills <remote> --get-skills` | `polyskills list <remote> skills` |
 | `polyskills <remote> --update <name> --directory ".skills/"` | `polyskills manager <remote> --name <name> --destination .skills/<name> --exists overwrite skills` |
 | _(no equivalent)_ | `polyskills manager <remote> --name <name> agents` |
@@ -316,11 +323,11 @@ $ polyskills manager https://github.com/<owner>/<repo> \
 
 ### PolySkills v1.0.0 | 2026-05-25
 
-The world of AI is evolving fastm and agent workflows are the new *norms* to build awesome projects, or to create an entire
-army of dedicate problem solver to run an entire organization. To help a LLM to produce the correct output in a desired format
-or to do a certain tasks in a configured way an extension is necessary. The initial version aims to streamline the process of
-management of different skills. The package is now available at [**`polyskills`**](https://github.com/PyUtility/polyskills) and
-can be installed like:
+The world of AI is evolving fastm and agent workflows are the new *norms* to build awesome projects, or to create an
+entire army of dedicate problem solver to run an entire organization. To help a LLM to produce the correct output in a
+desired format or to do a certain tasks in a configured way an extension is necessary. The initial version aims to
+streamline the process of management of different skills. The package is now available at
+[**`polyskills`**](https://github.com/PyUtility/polyskills) and can be installed like:
 
 ```shell
 $ pip install polyskills==1.0.0
@@ -328,10 +335,10 @@ $ polyskills "https://www.github.com/<owner>/<repository>" --get-skills
 $ polyskills "https://www.github.com/<owner>/<repository>" --update <skill-name> --directory ".skills/"
 ```
 
-The module is designed without any exotic dependency - the job: (I) fetch lists of skills defined under a remote version control
-system with ``git tag skillName@vX.Y.Z` format, (II) add/update the skill in the required directory.
+The module is designed without any exotic dependency - the job: (I) fetch lists of skills defined under a remote version
+control system with ``git tag skillName@vX.Y.Z format, (II) add/update the skill in the required directory.
 
-> [!WARNING] This version (v1.0.0) of the module is now deprecated. The advanced version v2 is developed. The module is a
-> complete refactor and old codes are completely removed from history. Check the PyPI tarball for file details.
+> [!WARNING] This version (v1.0.0) of the module is now deprecated. The advanced version v2 is developed. The module is
+> a complete refactor and old codes are completely removed from history. Check the PyPI tarball for file details.
 
 </div>

@@ -6,8 +6,8 @@
 
 <div align = "justify">
 
-Inherit the original skill, general rules and extend to include section wise additional rules only for PostgreSQL database. The
-additional contents are only added below.
+Inherit the original skill, general rules and extend to include section wise additional rules only for PostgreSQL
+database. The additional contents are only added below.
 
 ## Getting Started
 
@@ -19,16 +19,24 @@ modifing SQL codes.
 Additional objects specific for a PostgreSQL database are to be organized in the following directory structure unless an
 user explictly asked for a different location:
 
+<div align = "center">
+
 | Directory Name | Usage and Details |
 | :---: | --- |
 | database/schema/<schema>/views/materialized/<viewname>.sql | Use this directory to keep materialized views. |
+
+</div>
 
 ### Naming Convention
 
 The following new string strict naming convention to categorize objects for a PostgreSQL database is added as below:
 
+<div align = "center">
+
 | Suffix Style | Suffix Meaning | Example/Usage |
-| :---: | :---: | --- |
+| :---: | :---: | :---: |
 | `_mvw` | Materialized View | `country_mvw`, `employee_mvw` |
+
+</div>
 
 </div>

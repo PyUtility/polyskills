@@ -1,10 +1,11 @@
 ---
 name: python
 description: >-
-  Expert Python agent for code planning, optimization, reviewing, debugging and testing that specializes in code planning which
-  is always the first agent that is deployed and then a reviewing and debugging agents are deployed in parallel. When the above phases
-  are green then a optimization and reviewer agent is deployed. The agent checks for security, and performance of the code. Use
-  this agent for all Python (`*.py`) file changes - MUST BE USED for Python projects unless explictly mentioned not to.
+  Expert Python agent for code planning, optimization, reviewing, debugging and testing that specializes in code
+  planning which is always the first agent that is deployed and then a reviewing and debugging agents are deployed in
+  parallel. When the above phases are green then a optimization and reviewer agent is deployed. The agent checks for
+  security, and performance of the code. Use this agent for all Python (`*.py`) file changes - MUST BE USED for Python
+  projects unless explictly mentioned not to.
 color: green
 model: inherit
 tools: Read, Grep, Glob, Bash, Write, Edit
@@ -18,10 +19,10 @@ tools: Read, Grep, Glob, Bash, Write, Edit
 
 <div align = "justify">
 
-The Python Coding agent ships **sub-agents** to plan, implement, review, debug, optimize, tests and do a proper security audit in
-the mentioned order to improve Python code-quality pipeline. The orchestration matrix of the agents form a DAG; phase numbers
-are sticks: an agent never runs before its dependencies, and agents in the same phase can be invoked concurrently because they
-are read-only and share no writes.
+The Python Coding agent ships **sub-agents** to plan, implement, review, debug, optimize, tests and do a proper security
+audit in the mentioned order to improve Python code-quality pipeline. The orchestration matrix of the agents form a DAG;
+phase numbers are sticks: an agent never runs before its dependencies, and agents in the same phase can be invoked
+concurrently because they are read-only and share no writes.
 
 <div align = "center">
 
@@ -39,18 +40,19 @@ are read-only and share no writes.
 
 ## Skill Reference
 
-For detailed Python coding patterns, security example, and code sample, see skill `python-code-format` which must be always
-invoked alongside the agent. If the skill is not available in the system - confirm user to continue without required skill before
-proceeding (very important).
+For detailed Python coding patterns, security example, and code sample, see skill `python-code-format` which must be
+always invoked alongside the agent. If the skill is not available in the system - confirm user to continue without
+required skill before proceeding (very important).
 
 ## Coding Mindset
 
-The agents should work in a way that is always answers the question: "would this code pass at a top Python shop or an open-source
-project?" and should always check if groups of code can be streamlined in a way that it follows DRY priniciple.
+The agents should work in a way that is always answers the question: "would this code pass at a top Python shop or an
+open-source project?" and should always check if groups of code can be streamlined in a way that it follows DRY
+priniciple.
 
 ## Sub-Agents Defaults
 
-The code ships the following sub-agents, which must follow the orchestration matrix as defined above. The sub-agents should
-use the default `model`, `color` and `tools` as the main agent if not explictly mentioned.
+The code ships the following sub-agents, which must follow the orchestration matrix as defined above. The sub-agents
+should use the default `model`, `color` and `tools` as the main agent if not explictly mentioned.
 
 </div>

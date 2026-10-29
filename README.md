@@ -26,80 +26,88 @@
 
 <div align = "justify">
 
-A curated collection of AI agents, skills, workflows, etc., that can work across industries - providing Python-based utility
-functions to synchronize the library across multiple systems using a version-controlled system. The project also provides
-connectors for universal loading across different LLM tools (Anthropic's Claude Code, CodeX, Cursor AI, etc.) that can read skills
-either directly (Claude Code) or follow prompts based control. 🤖✨
+A curated collection of AI agents, skills, workflows, etc., that can work across industries - providing Python-based
+utility functions to synchronize the library across multiple systems using a version-controlled system. The project also
+provides connectors for universal loading across different LLM tools (Anthropic's Claude Code, CodeX, Cursor AI, etc.)
+that can read skills either directly (Claude Code) or follow prompts based control. 🤖✨
 
 ## 🧠 Introduction to LLM Library
 
 Artificial Intelligence (AI) systems are revolutionizing the way industries operate. From everyday tasks to specialized,
-automated tasks - AI brings efficiency, innovation, and scalability. With the release of [Claude Skills](https://claude.com/skills),
-[AI Agent Skills](https://agentskills.io/home) and other niche, fast-paced developments in this space - it is now a fundamental
-requirement to maintain a unified, standardized repository of these capabilities.
+automated tasks - AI brings efficiency, innovation, and scalability. With the release of [Claude
+Skills](https://claude.com/skills), [AI Agent Skills](https://agentskills.io/home) and other niche, fast-paced
+developments in this space - it is now a fundamental requirement to maintain a unified, standardized repository of these
+capabilities.
 
-### 🤖 Project Capabilities
+### Project Capabilities
 
-The project provides a curated list of AI [agents](./library/agents/), [skills](./library//skills/), and other essential tools
-that enhances the way AI agents works and performs. In addition, the skills also provides different customization rules (e.g., 
-generate an code output the way you write code, or generate email content based on your own writing styles).
+The project provides a curated list of AI [agents](./library/agents/), [skills](./library//skills/), and other essential
+tools that enhances the way AI agents works and performs. In addition, the skills also provides different customization
+rules (e.g., generate an code output the way you write code, or generate email content based on your own writing
+styles).
 
-  * A categorized list of [AI Skills](./library//skills/) in a standard [Agent Skills](https://agentskills.io/home) format to
-    give new capabilities and expertise.
-  * A list of [AI Agents](./library/agents/) to break tasks into seperate functional groups that can work concurrently or in a
-    sequential manner as per the design pattern.
-  * A dedicated *open-source* Python framework to manage all above skills, agents, etc. from any version controlled remote
-    repositories across different systems and projects using single source of truth.
-  * A set of adapters to convert standard Agent Skills to other AI coding agents (which does not support native `SKILLS.md`,
-    or `AGENTS.md` file) by converting files to prompts.
+  * A categorized list of [AI Skills](./library//skills/) in a standard [Agent Skills](https://agentskills.io/home)
+    format to give new capabilities and expertise.
+  * A list of [AI Agents](./library/agents/) to break tasks into seperate functional groups that can work concurrently
+    or in a sequential manner as per the design pattern.
+  * A dedicated *open-source* Python framework to manage all above skills, agents, etc. from any version controlled
+    remote repositories across different systems and projects using single source of truth.
+  * A set of adapters to convert standard Agent Skills to other AI coding agents (which does not support native
+    `SKILLS.md`, or `AGENTS.md` file) by converting files to prompts.
 
 ## 🚀 Getting Started
 
-LLM Tools like Anthropic's Claude Code can directly work with the Agent Skills format that invokes `SKILLS.md` (or `AGENTS.md`)
-file natively based on skill description or keywords defined in a settings file. However, some other tools may require an
-adapter to safely convert to system prompts. The Python [`framework`](./polyskills/) is designed to address the issue by importing
-the required skills from any version controlled systems such that one single source of truth can be maintained across different
-production environment or projects having the same functionalities - thus providing consistent output.
+LLM Tools like Anthropic's Claude Code can directly work with the Agent Skills format that invokes `SKILLS.md` (or
+`AGENTS.md`) file natively based on skill description or keywords defined in a settings file. However, some other tools
+may require an adapter to safely convert to system prompts. The Python [`framework`](./polyskills/) is designed to
+address the issue by importing the required skills from any version controlled systems such that one single source of
+truth can be maintained across different production environment or projects having the same functionalities - thus
+providing consistent output.
 
-### 📦 Installation
+### Installation
 
-The package is hosted at [PyPI](http://pypi.org/project/polyskills/) and can be installed using the `pip` package manager as:
+The package is hosted at [PyPI](http://pypi.org/project/polyskills/) and can be installed using the `pip` package
+manager as:
 
 ```shell
 $ pip install polyskills
 ```
 
-To install the package from source, you need to have `git` client available on your system and install the binaries using the
-below command:
+To install the package from source, you need to have `git` client available on your system and install the binaries
+using the below command:
 
 ```shell
 $ git clone https://github.com/PyUtility/polyskills
 $ pip install . # cd into polyskills; editable install using -e
 ```
 
-The `**library**` requires **Python 3.12+** and is designed to have minimal overheads, thus providing *long-term compatibility*
-with the upcoming releases (requires [standard libraries](https://docs.python.org/3/library/index.html) which is shipped by
-default) of Python language and AI tools.
+The `**library**` requires **Python 3.12+** and is designed to have minimal overheads, thus providing *long-term
+compatibility* with the upcoming releases (requires [standard libraries](https://docs.python.org/3/library/index.html)
+which is shipped by default) of Python language and AI tools.
 
-### 🧰 CLI Overview
+### CLI Overview
 
 Once installed, the `polyskills` command is exposed on the system `PATH`. Use the `--help` flag at any level to discover
 documentation for all sub-commands and flags. The CLI is organized around five sub-commands:
 
+<div align = "center">
+
 | 🔖 Command | 🎯 Purpose |
-| :--- | :--- |
+| :---: | --- |
 | `tools` | List the supported LLM tools (e.g., Claude Code, GitHub Copilot) and exit. |
 | `sources` | List the supported remote source providers (e.g., GitHub) and exit. |
 | `list` | Enumerate available extensions under a remote `<source>` directory, no download. |
 | `manager` | Fetch a single extension (`skills` / `agents`) from the remote into a local directory. |
 | `records` | Inspect the local tracking database (install location, commit SHA, timestamps). |
 
+</div>
+
 ```shell
 $ polyskills --help          # top level documentation and sub-commands
 $ polyskills manager --help  # documentation for the 'manager' sub-command
 ```
 
-### 🔍 Discover Supported Tools and Sources
+### Discover Supported Tools and Sources
 
 The `tools` and `sources` sub-commands are *terminal*, i.e., they print and exit. Use them to validate that a target LLM
 tool or remote provider is supported before running a fetch.
@@ -115,11 +123,11 @@ $ polyskills sources
 >> 01. GITHUB - https://www.github.com/
 ```
 
-### 📜 List Extensions on a Remote
+### List Extensions on a Remote
 
-Use the `list` sub-command to enumerate the immediate child directories under a remote `--source` path without downloading
-any content. The required positional `LIBRARY` argument selects the extension family (`skills`, `agents`, `commands`,
-`hooks`) and also supplies the default `--source` directory (`./<library>`) when `--source` is omitted.
+Use the `list` sub-command to enumerate the immediate child directories under a remote `--source` path without
+downloading any content. The required positional `LIBRARY` argument selects the extension family (`skills`, `agents`,
+`commands`, `hooks`) and also supplies the default `--source` directory (`./<library>`) when `--source` is omitted.
 
 ```shell
 $ polyskills list https://github.com/PyUtility/polyskills skills \
@@ -134,7 +142,7 @@ $ polyskills list https://github.com/PyUtility/polyskills agents \
       --source ./extensions/agents --version master
 ```
 
-### 📥 Fetch an Extension with `manager`
+### Fetch an Extension with `manager`
 
 The `manager` sub-command downloads a single extension (`skills` or `agents`) into a destination directory. The library
 type is selected via a sub-sub-parser (`skills` / `agents`) and the extension name comes from `-n / --name`. When
@@ -160,7 +168,7 @@ The `--exists` flag controls behavior when the destination directory already exi
   * 🧹 `overwrite` - remove the destination tree and re-extract from scratch.
   * 🛠 `merge` - extract on top of the existing tree, overwriting on conflict.
 
-### 🔐 Authentication and Pagination
+### Authentication and Pagination
 
 For private or self-hosted repositories, an authentication token is required. The token is resolved with the following
 precedence (highest first):
@@ -180,7 +188,7 @@ The `--pagination` flag (defaults to `100`, the GitHub maximum) tunes how many e
 during enumeration. The `--version` flag (defaults to `master`) pins the fetch to an exact tag or commit SHA so the
 extension content is reproducible across systems.
 
-### 🗃️ Local Tracking Database
+### Local Tracking Database
 
 Every `polyskills manager` fetch is recorded by default into a local SQLite database at `~/.polyskills/records.db`
 (resolved OS-independently via `Path.home()`) so you can answer "what did I install, from where, into which directory,
@@ -218,10 +226,10 @@ $ polyskills records --name sql-code-format        # full per-fetch history of o
 The same data is available through the Python API - `record_fetch`, `list_installations`, and `get_installation`
 in `polyskills.database` - so tracking can be embedded in automation without the CLI.
 
-### 🐍 Programmatic Usage
+### Programmatic Usage
 
-In addition to the CLI, every primitive is exposed as a Python API so the same workflow can be embedded inside automation
-scripts, CI pipelines, or notebooks.
+In addition to the CLI, every primitive is exposed as a Python API so the same workflow can be embedded inside
+automation scripts, CI pipelines, or notebooks.
 
 ```python
 from pathlib import Path
@@ -253,15 +261,17 @@ get(
 ## ⚖️ Project License
 
 This project is licensed under the [MIT License](...). Permission is granted to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the software. The software is provided “as is”, without warranty of any kind,
-express or implied. See the LICENSE file for full details.
+distribute, sublicense, and/or sell copies of the software. The software is provided “as is”, without warranty of any
+kind, express or implied. See the LICENSE file for full details.
 
 ## ⚠️ Project Disclaimer
 
-The project provides a curated lists of skills, agents, etc. which can alter the performance of AI tools significantly. AI makes
-mistakes and the tools listed here can worsen the performance. Please read, verify and research before using any content.
+The project provides a curated lists of skills, agents, etc. which can alter the performance of AI tools significantly.
+AI makes mistakes and the tools listed here can worsen the performance. Please read, verify and research before using
+any content.
 
-AI tools often charges based on token consumptions (approx. number of input + output words) and using contents from this library
-may significantly increase the consumption cost. Always check and track usage of the model with/without using the skills.
+AI tools often charges based on token consumptions (approx. number of input + output words) and using contents from this
+library may significantly increase the consumption cost. Always check and track usage of the model with/without using
+the skills.
 
 </div>
