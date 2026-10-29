@@ -29,9 +29,10 @@ The canonical skills live under [`extensions/skills/`](./extensions/skills/). Ea
 </div>
 
 > [!NOTE]
-> The Python *agent suite* under [`extensions/agents/python/`](./extensions/agents/python/) targets
-> Claude Code's subagent model, which Codex does not implement. Use the skills above with Codex; the
-> agent behaviour can be invoked via the `polyskills` CLI adapter (prompt conversion) if needed.
+> The Python and SQL *agent suites* under [`extensions/agents/python/`](./extensions/agents/python/) and
+> [`extensions/agents/sql/`](./extensions/agents/sql/) target Claude Code's subagent model, which Codex does not
+> implement. Use the skills above with Codex; the agent behaviour can be invoked via the `polyskills` CLI adapter
+> (prompt conversion) if needed.
 
 ## 📥 Loading the Skills into Codex
 

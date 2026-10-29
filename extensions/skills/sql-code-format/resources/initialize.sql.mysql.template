@@ -1,0 +1,57 @@
+/*********************************************************************
+Configuration and initialization file of the MySQL <Project> database.
+MySQL has no schemas inside a database (SCHEMA is a synonym of
+DATABASE), so the objects of the application live in one database and
+are grouped by directory rather than by schema; create a separate
+database only for a part of the application that is deployed on its
+own.
+
+All the DDL statements are guarded, i.e., the initialization scripts
+should not fail if an object exists: tables use IF NOT EXISTS, views
+use OR REPLACE, and routines and triggers are dropped (IF EXISTS) and
+created again. MySQL commits every DDL statement implicitly, so the
+run cannot be rolled back as one transaction; a failure leaves the
+earlier statements in place, and a second run completes the rest.
+
+The script runs with the mysql client from this directory, which
+stops at the first error in batch mode (never pass --force):
+
+    mysql -u <owner-user> -p < initialize.sql
+
+Plugins and components are server-level: install them once per
+server from ``plugins/`` and ``components/``, never from this file.
+
+The database, its tables and the session use utf8mb4, since utf8
+(utf8mb3) cannot store four-byte characters. The rules target MySQL
+8.0.19 and later, including the 8.4 LTS release.
+
+Copyright © [<year>] <copyright-holder>
+*********************************************************************/
+
+SELECT CONCAT(
+    'Starting <Project> Initialization '
+    , DATE_FORMAT(NOW(3), '%Y-%m-%d %H:%i:%s.%f')
+) AS message;
+
+SET NAMES utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+
+CREATE DATABASE IF NOT EXISTS <database>
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_0900_ai_ci;
+
+USE <database>;
+
+/*********************************************************************
+Objects of the database are loaded in a strict order from their own
+directories under ``schemas/<database>/``: types and lookups, then
+tables, functions, procedures, views and triggers, the dated
+migrations, and the seeds last. The order ensures all the constraints
+are valid and the migrations run before any data is inserted.
+*********************************************************************/
+
+SELECT '  >> Creating Database Object(s) (optionally seed) ...'
+    AS message;
+
+SOURCE schemas/<database>/initialize.sql
+
+SELECT 'Completed <Project> Initialization' AS message;

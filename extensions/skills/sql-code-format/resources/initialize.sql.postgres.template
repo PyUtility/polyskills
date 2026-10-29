@@ -1,0 +1,77 @@
+/*********************************************************************
+Configuration and initialization file of the PostgreSQL <Project>
+database. The database holds structured information that is logically
+grouped by the domain of usage, one schema per domain. The file builds
+the database from scratch, and a pipeline can run it again to bring
+an existing database to the latest version.
+
+All the DDL statements are guarded, i.e., the initialization scripts
+should not fail if an object exists: schemas, tables and indexes use
+IF NOT EXISTS, functions, views and triggers use OR REPLACE, and the
+types and domains are created in a DO block that checks the catalog.
+
+The whole run is wrapped in a single transaction, so a failure
+anywhere rolls the database back rather than leaving a half-built
+schema. Run it from this directory against an existing database:
+
+    psql -d <database> -f initialize.sql
+
+Extensions, publications and subscriptions are not created here: run
+the scripts of ``extensions/``, ``publications/`` and
+``subscriptions/`` separately, after this file; a subscription cannot
+run inside a transaction.
+
+Some seed data may contain accented values; so the encoding is set
+explicitly as "UTF-8" rather than inherited from the console. The
+rules target PostgreSQL 18 and later.
+
+Copyright © [<year>] <copyright-holder>
+*********************************************************************/
+
+\set ON_ERROR_STOP ON
+
+SELECT TO_CHAR(
+    CLOCK_TIMESTAMP(), 'YYYY-MM-DD HH24:MI:SS.MS TZ'
+) AS ts \gset
+
+\echo 'Starting <Project> Initialization' :ts
+
+/*********************************************************************
+Schemas by Domain of Usage: the DDL of every schema lives in its own
+directory under ``schemas/`` with its own ``initialize.sql``, and is
+loaded in a strict order, as the later schemas reference the earlier
+ones:
+
+    1. ``core``     : shared master data and helper functions that
+        every other schema references; always initialized first.
+    2. ``auth``     : identity - users, clients, roles and sessions.
+    3. ``events``   : what happened in the system - transactions,
+        bills, jobs and logs; references ``core`` and ``auth``.
+    4. ``projects`` : objects of a single project or product.
+
+NOTE: Never create application objects in the ``public`` schema on a
+production server. It is on the default ``search_path`` of every
+role, and before PostgreSQL 15 every role could create objects in it
+(CVE-2018-1058); a database upgraded from an older release still
+needs ``REVOKE CREATE ON SCHEMA public FROM PUBLIC``.
+*********************************************************************/
+
+BEGIN;
+
+\echo '  >> Creating Core Schema ...'
+\encoding UTF8
+
+CREATE SCHEMA IF NOT EXISTS
+    core AUTHORIZATION <owner-role>;
+
+\echo '  >> Creating Core Table(s) (optionally seed) ...'
+\ir schemas/core/initialize.sql
+
+\echo '  >> Creating other Schemas and Optionally Seed Table(s) ...'
+\ir schemas/auth/initialize.sql
+\ir schemas/events/initialize.sql
+\ir schemas/projects/initialize.sql
+
+COMMIT;
+
+\echo 'Completed <Project> Initialization'

@@ -1,7 +1,7 @@
 {
   "name": "llm-essentials",
   "version": "2.0.0",
-  "description": "Curated Claude Code skills and a multi-phase Python agent suite: code formatting (Python/SQL/Markdown), emoji-conventional git commits, and a planning -> review -> debug -> test -> optimize -> security pipeline.",
+  "description": "Curated Claude Code skills and multi-phase Python and SQL agent suites: code formatting (Python/SQL/Markdown), emoji-conventional git commits, and a planning -> review -> debug -> test -> optimize -> security pipeline.",
   "author": {
     "name": "Debmalya Pramanik",
     "email": "dpramanik.official@gmail.com",

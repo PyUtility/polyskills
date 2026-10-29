@@ -1,0 +1,86 @@
+/*********************************************************************
+Configuration and initialization file of the MS-SQL <Project>
+database. The database holds structured information that is logically
+grouped by the domain of usage, one schema per domain. The file builds
+the database from scratch, and a pipeline can run it again to bring
+an existing database to the latest version.
+
+All the DDL statements are guarded, i.e., the initialization scripts
+should not fail if an object exists: schemas and tables check
+SCHEMA_ID or OBJECT_ID first, and the views, functions, procedures
+and triggers use CREATE OR ALTER (SQL Server 2016 SP1 and later).
+
+The script runs in sqlcmd mode from this directory, against an
+existing database, and stops at the first error. The whole run is one
+transaction, so a failure rolls the database back:
+
+    sqlcmd -S <server> -d <database> -b -i initialize.sql
+
+SQL Server Replication is not configured here: run the scripts of
+``replications/`` (one per publication) separately, after this file.
+
+CREATE DATABASE cannot run inside a transaction, so create the
+database once before the first run, for example with a UTF-8 collation
+(2019 and later) and row versioning for readers (set while no other
+connection is open):
+
+    CREATE DATABASE <database>
+        COLLATE Latin1_General_100_CI_AS_SC_UTF8;
+
+    ALTER DATABASE <database> SET READ_COMMITTED_SNAPSHOT ON;
+
+Copyright © [<year>] <copyright-holder>
+*********************************************************************/
+
+:on error exit
+
+SET NOCOUNT ON;
+SET XACT_ABORT ON;
+
+PRINT CONCAT(
+    'Starting <Project> Initialization '
+    , FORMAT(SYSDATETIMEOFFSET(), 'yyyy-MM-dd HH:mm:ss.fff zzz')
+);
+GO
+
+/*********************************************************************
+Schemas by Domain of Usage: the DDL of every schema lives in its own
+directory under ``schemas/`` with its own ``initialize.sql``, and is
+loaded in a strict order, as the later schemas reference the earlier
+ones:
+
+    1. ``core``     : shared master data and helper functions that
+        every other schema references; always initialized first.
+    2. ``auth``     : identity - users, clients, roles and sessions.
+    3. ``events``   : what happened in the system - transactions,
+        bills, jobs and logs; references ``core`` and ``auth``.
+    4. ``projects`` : objects of a single project or product.
+
+NOTE: Never create application objects in the ``dbo`` schema on a
+production server. A one-part name falls back to ``dbo``, and every
+object in it shares one owner, so an ownership chain can reach all of
+them; keep ``dbo`` empty and use the named schemas above.
+*********************************************************************/
+
+BEGIN TRANSACTION;
+GO
+
+PRINT '  >> Creating Core Schema ...';
+
+IF SCHEMA_ID(N'core') IS NULL
+    EXEC (N'CREATE SCHEMA core AUTHORIZATION <owner-role>;');
+GO
+
+PRINT '  >> Creating Core Table(s) (optionally seed) ...';
+:r schemas/core/initialize.sql
+
+PRINT '  >> Creating other Schemas and Optionally Seed Table(s) ...';
+:r schemas/auth/initialize.sql
+:r schemas/events/initialize.sql
+:r schemas/projects/initialize.sql
+
+COMMIT TRANSACTION;
+GO
+
+PRINT 'Completed <Project> Initialization';
+GO

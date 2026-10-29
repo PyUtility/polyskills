@@ -79,7 +79,7 @@ Use the below sample template to generate DML commands when user asks for any mo
 ### INSERT Statements
 
 Use the following insert statement template to generate when asked for modification or create from scratch. If the field
-names are limited and all the field name can be managed into one line of maximum 120 length then use the below template.
+names are limited and all the field names fit into one line within the line limit, then use the below template.
 
 ```sql
 INSERT INTO <schema-name>.<table-name> (<field>, <field>, ...) VALUES
@@ -103,7 +103,8 @@ INSERT INTO <schema-name>.<table-name> (
 ```
 
 Any insert statement should be treated as a seed value to the database, and should be added into the following mandatory
-directory like `database/schema/<schema>/seed/<filename>.sql` where `<filename>` is the name of the table.
+directory like `database/schemas/<schema>/seed/<filename>.sql` where `<filename>` is the name of the table. A seed must
+be idempotent - a second run changes nothing - so write it as the upsert of the flavor reference.
 
 ## Rule Sets
 
@@ -112,14 +113,20 @@ modification does not follow the rules, modify the content along with the reques
 
   * All SQL reserved words and built-in functions must be written in `UPPERCASE`. This applies to clauses, operators,
     data types, and functions. User-defined object names (tables, columns, aliases, schemas) must be in `snake_case`.
-  * Limit all SQL lines to a maximum of **80 characters**, break long expressions across multiple lines using the
-    leading-comma style (`, expression`) consistent with the column list style in `SKILL.md`. Long `WHERE` conditions,
+  * Keep SQL lines within **70 characters** by default and never past **80**; the rows of a seed `INSERT` (one row per
+    line) are the only exception. Break long expressions across multiple lines using the leading-comma style
+    (`, expression`) consistent with the column list style in `SKILL.md`. Long `WHERE` conditions,
     `JOIN` predicates, and function argument lists should each go on their own indented line.
   * Always place a single space on both sides of comparison and assignment operators (`=`, `<>`, `!=`, `<`, `>`, `<=`,
     `>=`) and arithmetic operators (`+`, `-`, `*`, `/`).
   * Always use `IS NULL` or `IS NOT NULL` to test for `NULL` values. Never use `= NULL` or `<> NULL` as these
     comparisons always evaluate to `UNKNOWN` in SQL.
+  * Name an error by a human-readable condition (a PostgreSQL condition name, a MySQL declared condition, or a named
+    MS-SQL variable). Write a raw error code (a five-character SQLSTATE or an error number) only when the flavor offers
+    nothing else, and then add a short comment that says what it is.
   * All SQL file must have a consistent 4 spaces indentation style.
+  * Never commit a password, a key, or a connection secret in any SQL file - pass it in from the secret store of the
+    pipeline at run time.
   * Do not add inline comments unless there is a new field added or removed or functionality is changed.
 
 </div>

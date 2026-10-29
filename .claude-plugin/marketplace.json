@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "llm-essentials",
-      "description": "Code-formatting skills (Python/SQL/Markdown), emoji-conventional git commits, and a multi-phase Python development agent suite.",
+      "description": "Code-formatting skills (Python/SQL/Markdown), emoji-conventional git commits, and multi-phase Python and SQL development agent suites.",
       "source": "./extensions",
       "category": "development",
       "version": "2.0.0",

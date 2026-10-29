@@ -3,6 +3,7 @@
 # AI Agents Extensions
 
 [![Python Coding Agents](https://img.shields.io/badge/Python-%20Coding%20Agents-3776AB?style=plastic&logo=python)](python/python-coding.md)
+[![SQL Coding Agents](https://img.shields.io/badge/SQL-%20Coding%20Agents-orange?style=plastic)](sql/sql-coding.md)
 
 </div>
 
@@ -11,8 +12,8 @@
 Agents are *task-scoped specialists* that an orchestrator (Claude Code, Codex, Cursor, and the like) delegates work to
 during a multi-step code change. Where a *skill* teaches the model **how** to shape code, an *agent* teaches it **when
 to think**, **how to think**, and **with which discipline**. The agents here are grouped by programming language into a
-directory such as [python/](python/), and each agent ships as a `<language>-<usage>.md` file with YAML frontmatter that
-sets its default model, color, and tool grants, followed by the orchestration it must follow.
+directory such as [python/](python/) or [sql/](sql/), and each agent ships as a `<language>-<usage>.md` file with YAML
+frontmatter that sets its default model, color, and tool grants, followed by the orchestration it must follow.
 
 ## 🧠 What Is an Agent
 
@@ -38,13 +39,15 @@ grant, so they can investigate but never mutate the tree.
 
 ## 🚀 Getting Started
 
-  1. Open the language folder for your work, for example [python/](python/), and read
-     [python-coding.md](python/python-coding.md) first. It is the entry point and defines the full pipeline.
+  1. Open the language folder for your work, for example [python/](python/) or [sql/](sql/), and read its orchestrator
+     first ([python-coding.md](python/python-coding.md) or [sql-coding.md](sql/sql-coding.md)). It is the entry point,
+     routes each task to only the agents it needs, and defines the full pipeline.
   2. Install the agents where your tool can find them (see *Registering Agents* below).
   3. Delegate work either by naming an agent directly or by describing a task that matches its `description` and letting
      the orchestrator route it. A planning request lands on `python-code-planning`; a stack trace lands on
      `python-code-debugger`.
-  4. Let each phase gate the next. Nothing gets optimized or hardened until the correctness phases are green.
+  4. Let each phase gate the next. Nothing gets optimized or hardened until the correctness phases are green, and a
+     task never starts an agent it does not need (see the **Task Routing** table of each orchestrator).
 
 ### The Python Agent Suite
 
@@ -65,10 +68,31 @@ sequential.
 
 </div>
 
+### The SQL Agent Suite
+
+Seven agents cover a database change on PostgreSQL, MS-SQL (SQL Server), or MySQL, with the same phases. The
+orchestrator detects the flavor and version first, and every agent carries a **Flavor Extensions** section with the
+tooling and pitfalls of each engine for its role.
+
+<div align = "center">
+
+| Agent | Role | Phase | Writes Code |
+| :---: | --- | :---: | :---: |
+| `sql-code-planning` | Plans the objects, migrations, and their load order, with a live-data assessment | 1 | No |
+| (main session) | Implements the plan with the `sql-code-format` skill | 2 | Yes |
+| `sql-code-reviewer` | Flags wrong results, unsafe migrations, and scripts that cannot run twice | 3A | No |
+| `sql-code-debugger` | Reproduces failing SQL and pins the root cause | 3B | No |
+| `sql-code-testing` | Locks correctness in with database tests and re-run checks | 4 | Yes |
+| `sql-code-optimization` | Makes measured plan improvements; asks before any index | 5 | Yes |
+| `sql-code-security` | Runs the defensive security audit, the terminal gate | 6 | Yes |
+
+</div>
+
 ### Orchestration Pipeline
 
-Your main session is the orchestrator. It invokes each agent in phase order, running the reviewer and debugger together
-because both are read-only and share no writes.
+Your main session is the orchestrator. It invokes the agents a task needs in phase order, running the reviewer and
+debugger together because both are read-only and share no writes. The SQL suite follows the same pipeline with its
+`sql-code-*` agents.
 
 ```text
 1  python-code-planning        plan + todos, read-only
@@ -79,8 +103,9 @@ because both are read-only and share no writes.
 6  python-code-security        defensive audit, terminal gate
 ```
 
-A subagent cannot spawn other subagents, so the DAG in [python-coding.md](python/python-coding.md) is a specification
-the main session follows, not something one agent runs on its own. The gate between phases is the point: the optimizer
+A subagent cannot spawn other subagents, so the DAG in each orchestrator ([python-coding.md](python/python-coding.md),
+[sql-coding.md](sql/sql-coding.md)) is a specification the main session follows, not something one agent runs on its
+own. The gate between phases is the point: the optimizer
 refuses to touch code the reviewer and debugger have not cleared, and the security audit runs last, on code that is
 already correct and already fast.
 
@@ -96,10 +121,11 @@ Copy the agent files into one of those directories, or run `/agents` to add and 
 
 ```shell
 $ cp extensions/agents/python/*.md ~/.claude/agents/
+$ cp extensions/agents/sql/*.md ~/.claude/agents/
 ```
 
-This repository keeps the files grouped under `python/` for readability. If your Claude Code version does not discover
-nested folders, flatten the `*.md` files into the `agents/` root. Once registered, confirm the suite is visible with the
-`/agents` command before you delegate.
+This repository keeps the files grouped under `python/` and `sql/` for readability. If your Claude Code version does not
+discover nested folders, flatten the `*.md` files into the `agents/` root. Once registered, confirm the suite is visible
+with the `/agents` command before you delegate.
 
 </div>
