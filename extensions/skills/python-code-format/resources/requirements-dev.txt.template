@@ -1,0 +1,16 @@
+# Development and linting dependencies.
+#
+# Deliberately separate from requirements.txt - anything added there ships
+# to production. <Why a second file is used, for example a project without
+# pyproject.toml has no extras mechanism to express this split.>
+#
+#   pip install -r requirements.txt -r requirements-dev.txt
+
+-r requirements.txt
+
+# The linting standard is `.flake8` at the repository root. Never run a bare
+# `flake8 .` - it walks the virtual environment and does not return. Name the
+# packages instead:
+#
+#   flake8 <package>
+flake8==<x.y.z>

@@ -1,0 +1,27 @@
+# Runtime dependencies for <project-name>.
+#
+# <What installs this file - a service, an image, a batch job - and why the
+# runtime dependencies are kept in one file. Anything listed here ships to
+# production.>
+#
+# <Install command, with any flag the deployment relies on:>
+#
+#   pip install -r requirements.txt
+
+### <Group Name> ###
+<package-a>==<x.y.z>
+<package-b>[<extra>]==<x.y.z>
+
+# ! <critical note - why the package is pinned to this exact version, and
+# what must be re-verified before the pin is moved.>
+<package-c>==<x.y.z>
+<package-d>==<x.y.z>
+
+# ? <informational note - why the package is needed or how it is used.>
+<package-e>==<x.y.z>
+
+### <Another Group Name> ###
+# <Optional group note - who installs or imports this group, and why it
+# shares the file with the groups above.>
+
+<package-f>==<x.y.z>

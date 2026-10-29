@@ -6,12 +6,26 @@
         # .git is for version control, no need to traverse
         .git/,
 
-        # .github is standard file for compliance files
+        # .github/gitlab is standard file for compliance files
         .github/,
+        .gitlab/,
+
+        # incoming the agentic era, ignore configuration directory
+        .claude/,
+        .copilot/,
+        .cursor/,
+        .gemini/,
 
         # ignore following house-keeping/dev directories from checks
         docs/,
         examples/,
+
+        # standard logging directory for in-file/localhost executions
+        logs/,
+
+        # exclude virtual environment directories, installed packages
+        env/,
+        venv/,
 
         # additional repository directory not required to traverse
         extensions/
@@ -34,9 +48,16 @@
         # E203 : White Spaces before symbols, ignored personal preference
         # E203 is also violated by black: https://github.com/psf/black
         E203,
-        # 221 multiple spaces before operator
+        # E221 multiple spaces before operator
         E221,
         # E251 unexpected spaces around keyword / parameter equals
         E251,
         # E261 at least two spaces before inline comment
-        E261
+        E261,
+        # E303 too many white spaces (personal preference)
+        E303,
+        # E125 continuation line with same indent as next logical line.
+        # This is the house signature style - a long parameter list is
+        # indented eight spaces and the closing bracket four, which reads
+        # as a block and is used consistently across the project.
+        E125
