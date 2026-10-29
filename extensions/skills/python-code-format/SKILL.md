@@ -28,9 +28,59 @@ coding, and try to reuse already existing code (DRY principle of coding).
      from PEP 8 (for example `arg : int` or `ge = 10`), the skill and `.flake8` take precedence.
   3. Always check if .flake8 file is present in the project root and follow the linting standard. Create the file or
      align it with the template as described in the **Flake8 Configuration** section.
-  4. Apply every rule before generating output. Read the entire skill file.
+  4. Always try to use the Python agents when they are available - see the **Python Agents** section.
+  5. Apply every rule before generating output. Read the entire skill file.
 
 Never skip reading the skill or its resources even for small changes.
+
+## Python Agents
+
+Always try to use the Python agent suite from [PyUtility/polyskills](https://github.com/PyUtility/polyskills)
+(`extensions/agents/python/`) for a Python change when it is available - only the agents the task needs, chosen with
+the **Task Routing** table in `python-coding.md` (agent `python`), and always in its phase order. The main session is
+the orchestrator and implements the change with this skill:
+
+<div align = "center">
+
+| Agent | Phase | Role |
+| :---: | :---: | --- |
+| `python-code-planning` | 1 | Plans the change and its todos before any code is written |
+| (main session) | 2 | Implements the plan, following this skill |
+| `python-code-reviewer` | 3A | Reviews the diff against this skill (read-only) |
+| `python-code-debugger` | 3B | Reproduces failures and pins the root cause (read-only, in parallel with 3A) |
+| `python-code-testing` | 4 | Locks correctness in with deterministic tests |
+| `python-code-optimization` | 5 | Makes measured speed, memory, or I/O improvements |
+| `python-code-security` | 6 | Runs the defensive security audit, the terminal gate |
+
+</div>
+
+Before the first Python change in a session, check that the agents the task needs are available - listed as subagents,
+or present in `~/.claude/agents/` or `<project>/.claude/agents/`. A tool without subagent support counts as not
+available. If any agent is missing, never continue silently: show this warning and ask the user how to proceed.
+
+```text
+WARNING: The Python agents are not available in this system:
+python, python-code-planning, python-code-reviewer, python-code-debugger,
+python-code-testing, python-code-optimization, python-code-security.
+Fetch them from https://github.com/PyUtility/polyskills (extensions/agents/python/)
+into ~/.claude/agents/ or <project>/.claude/agents/.
+```
+
+Always ask the user to choose one of these options, and recommend the first:
+
+  1. **Fetch the agents automatically (recommended)** - once the user confirms, download them with the commands below,
+     then check that they are listed (for example with `/agents` in Claude Code) before continuing.
+  2. **Install the agents manually** - the user installs them from the repository above and confirms when they are
+     ready.
+  3. **Ignore the agents** - proceed with this skill alone, and state in the final summary that the agent phases were
+     skipped.
+
+```shell
+$ git clone --depth 1 https://github.com/PyUtility/polyskills
+$ cp polyskills/extensions/agents/python/*.md ~/.claude/agents/
+```
+
+Never download or install the agents without the user's confirmation, and ask again whenever they are still missing.
 
 ## Naming Convention
 
@@ -390,5 +440,7 @@ can be easily extended.
   - [ ] Does the changed code pass `flake8` with the project configuration?
   - [ ] Was a requirements file created, updated, or tested in a `venv` only because the user asked for it?
   - [ ] Does every requirements file follow the templates (exact pins, `### Group ###` headers, `# !` / `# ?` notes)?
+  - [ ] Did I use the Python agents the task needs when available - and when missing, did I ask the user (recommending
+    the automatic fetch) before continuing?
 
 </div>

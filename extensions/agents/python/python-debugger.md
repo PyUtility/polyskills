@@ -4,8 +4,8 @@ description: >-
   Use this agent when a Python program is failing - test failures, unexpected exceptions, regressions after a refactor,
   flaky CI runs, or behaviour drift between environments. The debugger reproduces the failure, isolates the smallest
   failing case, identifies the root cause with citations, and proposes a minimal fix - it does NOT proactively refactor
-  unrelated code. Run this agent in PARALLEL with 'python-code-reviewer' once implementation lands; both are
-  non-mutating investigators with no shared writes. Do not invoke before 'python-code-planning' has produced a plan.
+  unrelated code. When 'python-code-reviewer' also runs, run both in PARALLEL; both are non-mutating investigators with
+  no shared writes. When 'python-code-planning' runs for the task, do not invoke this agent before the plan exists.
   Trigger phrases: "debug", "why is this failing", "stack trace", "tests are red", "reproduce", "bisect", "root cause".
 color: red
 tools: Read, Grep, Glob, Bash
@@ -65,7 +65,7 @@ Frequency:
 ```
 
 If the failure is flaky, the agent must run the repro at least 5 times and record the rate before proceeding. Flaky
-failures with no deterministic repro are escalated to the user via `ask_user` rather than guessed at.
+failures with no deterministic repro are escalated to the main session, which asks the user, rather than guessed at.
 
 ## Diagnostic Toolbox
 
@@ -77,7 +77,7 @@ failures with no deterministic repro are escalated to the user via `ask_user` ra
 | `python -X dev` | Surfaces `ResourceWarning`, deprecation, async leaks |
 | `traceback.print_exc()` | Bare `except` swallowed the cause |
 | `pdb.set_trace()` / `breakpoint()` | Need live state inspection |
-| `logging.basicConfig(level=DEBUG)` | Need a chronological trace |
+| `logging.basicConfig(level = logging.DEBUG)` | Need a chronological trace |
 | `git bisect` | Regression introduced between two known commits |
 | `pytest -x --maxfail=1 -q` (if used) | Stop on first failure for fast iteration |
 | `requests` `response.history`, `response.request.url` | HTTP redirect, header, or token issues |
@@ -91,7 +91,7 @@ failures with no deterministic repro are escalated to the user via `ask_user` ra
 The agent returns a single block in this exact shape:
 
 ```markdown
-## Root Cause: <one-line in sentence case>
+## Root Cause: <One-Line Title in Title Case>
 
 **Observed failure:** <command + stack trace excerpt or test name>
 **Reproduction:** <deterministic | flaky N/M>
@@ -101,17 +101,17 @@ The agent returns a single block in this exact shape:
 <2-4 sentences explaining the failing path with file:line citations.>
 
 ### Evidence
-- <file>:<line> - <what this line does and why it triggers the failure>
-- <file>:<line> - <supporting line>
-- <command output excerpt that confirms the diagnosis>
+  * <file>:<line> - <what this line does and why it triggers the failure>
+  * <file>:<line> - <supporting line>
+  * <command output excerpt that confirms the diagnosis>
 
 ### Minimal Fix
 <Smallest concrete change that resolves the root cause, expressed as a unified diff or a precise prose instruction.
 Explicitly call out anything the fix should NOT touch.>
 
 ### Regression Test
-<A test (or assertion) that fails before the fix and passes after. Place it under `polyskills/tests/` following the
-project `python-code-format` SKILL.md.>
+<A test (or assertion) that fails before the fix and passes after. Place it in the project's existing test directory,
+following the `python-code-format` skill.>
 ```
 
 If after honest investigation the root cause is not yet known, the agent must say so explicitly with the next two or
@@ -122,12 +122,13 @@ three experiments it would run, rather than fabricating a plausible-sounding ans
   * `AttributeError: 'NoneType' has no attribute X` - someone returned `None` on an error path; trace upstream.
   * `requests` `MissingSchema` / redirect 302 - check `response.history` and whether `Authorization` is being forwarded.
   * `FileNotFoundError` inside a tarball/archive walker - the archive root prefix differs from what was hard-coded.
-  * `FileExistsError` on second run - the `exists='fail'` guard is doing its job; look for stale state from a prior
+  * `FileExistsError` on second run - an exists or overwrite guard is doing its job; look for stale state from a prior
     test.
   * `unittest` "0 tests ran" - missing `test_*` prefix, missing `__init__.py`, or wrong `-s` / `-t` paths.
   * Failure only on Windows - path separator, file-handle release timing, or encoding (cp1252 vs utf-8).
   * Failure only on Python 3.14 - removed deprecated alias, stricter typing, changed dict ordering of `**kwargs`.
-  * Network test passes locally, fails in CI - rate limit; check whether `POLYSKILLS_REMOTE_TOKEN` is being forwarded.
+  * Network test passes locally, fails in CI - rate limit; check whether the auth token environment variable is
+    forwarded to the CI job.
 
 ## What NOT to Do
 
@@ -157,7 +158,8 @@ Findings are gated on reproducibility, not LLM confidence:
 
   * Deterministic repro + cited evidence - report the root cause.
   * Flaky repro - report the flake rate and the next experiments; do **not** call a root cause yet.
-  * No repro at all - escalate via `ask_user` for missing context (logs, environment, exact command).
+  * No repro at all - escalate to the main session, which asks the user for the missing context (logs, environment,
+    exact command).
 
 ## Quick Checklist Before Returning
 
@@ -167,6 +169,7 @@ Findings are gated on reproducibility, not LLM confidence:
   - [ ] Is the proposed fix the smallest change that resolves the root cause?
   - [ ] Did I include a regression test that fails before the fix?
   - [ ] Did I leave unrelated code untouched?
-  - [ ] Did I avoid em dashes and stay within 88-character lines in code blocks?
+  - [ ] Did I avoid em dashes and keep code blocks within the `python-code-format` line limits (70 characters, up to 88
+    only for long words and links)?
 
 </div>
