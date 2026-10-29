@@ -21,6 +21,7 @@ The canonical skills live under [`extensions/skills/`](./extensions/skills/). Ea
 
 | 🔖 Skill | 🎯 Applies When |
 | :---: | --- |
+| `code-modification-rule` | Only when explicitly invoked - dated change annotations in the header of any language. |
 | `git-commiter` | Creating, amending, or writing any git commit message in this repository. |
 | `markdown-format` | Creating, editing, or reviewing any `*.md` file (README, SKILL, AGENT, docs). |
 | `python-code-format` | Creating, editing, or reviewing any `*.py` file or Python code. |

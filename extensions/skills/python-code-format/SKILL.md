@@ -294,7 +294,7 @@ doing a code refactoring or there is a major change (ignore for small changes).
 
 # regular single-line comment - plain explanation
 
-# .. versionchanged:: <yyyy-mm-dd> One Line Title Case Change Summary
+# ..versionchanged:: <yyyy-mm-dd> One Line Title Case Change Summary
 ```
 
 Never add comments explaining obvious code. Only comment where intent is non-obvious, or does not follow standard

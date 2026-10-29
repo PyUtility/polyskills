@@ -17,8 +17,8 @@
 ![Markdown Files](https://img.shields.io/badge/-Markdown%20Files-000000?logo=markdown&logoColor=white)
 ![GIT Commits](https://img.shields.io/badge/-GIT%20Commits-F03C2E?logo=git&logoColor=white)
 
-[![HOOKS](https://img.shields.io/badge/🗜%20HOOKS-0-purple?style=plastic)](./extensions/hooks)
-[![SKILLS](https://img.shields.io/badge/💡%20SKILLS-6-orange?style=plastic)](./extensions/skills)
+[![HOOKS](https://img.shields.io/badge/🗜%20HOOKS-1-purple?style=plastic)](./extensions/hooks)
+[![SKILLS](https://img.shields.io/badge/💡%20SKILLS-7-orange?style=plastic)](./extensions/skills)
 [![AGENTS](https://img.shields.io/badge/🤖%20AGENTS-14-red?style=plastic)](./extensions/agents)
 [![COMMANDS](https://img.shields.io/badge/💻%20COMMANDS-0-blue?style=plastic)](./extensions/commands)
 
