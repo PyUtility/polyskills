@@ -70,6 +70,7 @@ These three rules are the spine of the skill. They are gates, not preferences.
 | Any `*.md` file | `markdown-format` | Only the sentence-level prose. The div wrappers, headings, list markers, and em-dash ban win. |
 | `*.py` file | `python-code-format` | Comment and docstring wording only. Code is immutable. |
 | `*.sql` file | `sql-code-format` | Comment wording only. Statements are immutable. |
+| Prose rewritten with `/flaunt-product` | `flaunt-product` | Rhythm, punctuation, and tics only. Its vocabulary, framing, and flattery win over the lexical and hype rules. |
 
 </div>
 
@@ -154,6 +155,15 @@ Do not swap a word that is technically correct in context. The right word always
 ### Punctuation
 
   * Do not lean on semicolons to chain clauses the model could not commit to splitting.
+  * Replace the harmful typographic characters in prose, code documentation and comments: the em dash
+    (`—`) and en dash (`–`) with a hyphen-minus `-`, curly single quotes (`‘ ’`) with `'`, curly
+    double quotes (`“ ”`) with `"`, and the ellipsis character (`…`) with `...`. Replace nothing
+    else: `©`, arrows, `≤`, `≥` and other LaTeX-style symbols, box-drawing characters, emoji and
+    accented letters are allowed everywhere.
+  * Inside code, these characters are allowed only in output text that a program prints or shows (a
+    `print` call, a notice). Never change one elsewhere in code (a seed value, a string literal):
+    report each one with its file and line number, for example `seed/currency.sql:130`, and let the
+    user decide what to do with it.
 
 ### Assistant Tics
 
@@ -205,7 +215,11 @@ on hiding anything.
 Before emitting humanized text, confirm every box.
 
   - [ ] Meaning, facts, identifiers, and code are unchanged.
-  - [ ] Em dashes: banned in `*.md` files; reduced to near zero elsewhere, replaced by a period, comma, parentheses, or colon. Punctuation varies and does not lean on semicolons.
+  - [ ] Em dashes and curly quotes: none anywhere, code included, except in output text a program prints or shows;
+    replaced by a period, comma, parentheses, or colon. Punctuation varies and does not lean on semicolons.
+  - [ ] Harmful typographic characters (em and en dashes, curly quotes, the ellipsis character) are replaced in prose,
+    documentation and comments; any other one inside code, outside program output text, is reported with file and line,
+    not changed. Arrows, `≤`, `≥` and LaTeX-style symbols stay.
   - [ ] Sentence lengths vary: at least one short sentence and one longer one, and no run of three at about the same length.
   - [ ] No overused lexical tells remain.
   - [ ] No assistant tics and no conclusion that only restates the opening.
@@ -226,5 +240,7 @@ If a passage is borderline, score it with the rubric in
   - [ ] Did I vary sentence length and cut the lexical, tonal, and assistant tells?
   - [ ] Did I set the register from the content type rather than impose one voice?
   - [ ] Did I keep protected hedges and avoid fabricating detail?
+  - [ ] Did I replace only the harmful typographic characters, only outside code, and report those inside code (except
+    program output text)?
 
 </div>

@@ -22,6 +22,8 @@ The canonical skills live under [`extensions/skills/`](./extensions/skills/). Ea
 | 🔖 Skill | 🎯 Applies When |
 | :---: | --- |
 | `code-modification-rule` | Only when explicitly invoked - dated change annotations in the header of any language. |
+| `dbml-code-format` | Creating, editing, or reviewing any `*.dbml` schema diagram (dbdiagram.io free tier). |
+| `flaunt-product` | Only when explicitly invoked - executive-ready rewrite of business prose, with every fact kept. |
 | `git-commiter` | Creating, amending, or writing any git commit message in this repository. |
 | `markdown-format` | Creating, editing, or reviewing any `*.md` file (README, SKILL, AGENT, docs). |
 | `python-code-format` | Creating, editing, or reviewing any `*.py` file or Python code. |
