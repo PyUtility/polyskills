@@ -1,0 +1,20 @@
+# Project Memory
+
+Durable memory for every session in this repository, kept in git so that it survives a new machine, account, or
+checkout path. `CLAUDE.md` imports it, so it loads on every request: keep it short and put the detail in `{docs}`.
+
+## Owner Preferences
+
+  * {How the owner wants work done}. {Why, in a few words.}
+
+## Environment
+
+  * {A tool, version, or path that commands depend on, written so that it holds on every machine}.
+
+## Decisions And Changes
+
+  * {YYYY-MM-DD}: {the decision or change in one line}; see `{group}/{member}.md`.
+
+## Open Items
+
+  * {Pending work or a known gap}; see `{gaps document}`.

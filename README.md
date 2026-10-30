@@ -18,7 +18,7 @@
 ![GIT Commits](https://img.shields.io/badge/-GIT%20Commits-F03C2E?logo=git&logoColor=white)
 
 [![HOOKS](https://img.shields.io/badge/🗜%20HOOKS-1-purple?style=plastic)](./extensions/hooks)
-[![SKILLS](https://img.shields.io/badge/💡%20SKILLS-9-orange?style=plastic)](./extensions/skills)
+[![SKILLS](https://img.shields.io/badge/💡%20SKILLS-10-orange?style=plastic)](./extensions/skills)
 [![AGENTS](https://img.shields.io/badge/🤖%20AGENTS-14-red?style=plastic)](./extensions/agents)
 [![COMMANDS](https://img.shields.io/badge/💻%20COMMANDS-0-blue?style=plastic)](./extensions/commands)
 

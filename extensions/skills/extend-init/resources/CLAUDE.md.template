@@ -1,0 +1,50 @@
+# {Project Name}
+
+{One paragraph: what the repository is, its main parts, and the one rule every change must keep.}
+
+{{ OPTIONAL: when the project depends on skills or tools that a hook enforces
+## Required Skills
+
+  * `{skill}`: {what it governs, and what happens when it is missing}.
+}}
+
+## Commands
+
+```shell
+# {build or install}
+$ {command}
+
+# {test}
+$ {command}
+
+# {lint or format}
+$ {command}
+```
+
+## Architecture
+
+  * **{Part}**: {what it is, where it lives, and what it depends on}.
+  * **{Part}**: {what it is, where it lives, and what it depends on}.
+
+## Rules
+
+  1. {A rule that applies to every task, with the document that explains it: see `{group}/{member}.md`}.
+  2. Do not invent what is missing: record it in `{gaps document}` and ask before acting.
+  3. Update the documents a change affects as the last step of the change.
+
+## Read Only What The Task Needs
+
+The documents live under `{docs}`. Read the row that matches the task, never the whole directory.
+
+| Task Touches | Read |
+| :---: | --- |
+| `{code path}` | `{component}.md` |
+| `{code dir}/<name>/` for {name}, {name}, {name} | `{group}/<name>.md` |
+| `{code dir}/` | `{group}/{group}.md`, then the member document |
+| {Cross-cutting topic} | `{topic}.md` |
+
+{{ OPTIONAL: unless memory=off
+## Memory
+
+@{memory}
+}}

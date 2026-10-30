@@ -1,0 +1,25 @@
+<div align = "center">
+
+# {Group Name}
+
+</div>
+
+<div align = "justify">
+
+{One paragraph: what the group covers (`{code dir}/`), and what its members have in common.}
+
+## Members
+
+<div align = "center">
+
+| Document | Code | Read When |
+| :---: | :---: | --- |
+| `{member}.md` | `{code path}` | {The task that needs it} |
+
+</div>
+
+## Shared Conventions
+
+  * {A rule, a run recipe, or a contract that every member follows}.
+
+</div>
