@@ -1,0 +1,32 @@
+---
+name: {skill}
+description: >-
+  {What the skill does and when to use it, in the third person, with the key use case first. At most 1,024 characters.}
+  Trigger phrases: "{phrase}", "{phrase}".
+---
+
+<div align = "center">
+
+# {Skill Name}
+
+</div>
+
+<div align = "justify">
+
+{One paragraph: what the skill is for, and what it leaves to other skills.}
+
+## Getting Started
+
+  1. {The first rule, for example what to read before changing anything}.
+  2. {The next rule}.
+
+## {Main Section}
+
+{The instructions, written for any assistant. Name an action ("read the file", "run the tests"), never one vendor's
+tool, and never use a vendor placeholder such as an argument variable or a shell-injection block.}
+
+## Quick Checklist
+
+  - [ ] {The most likely failure, as a question}?
+
+</div>

@@ -1,0 +1,72 @@
+<div align = "center">
+
+# {Project Name} Product
+
+</div>
+
+<div align = "justify">
+
+{What the product is, who it is for, and the one principle every feature keeps.}
+
+<div align = "center">
+
+| Product | Version | Status |
+| :---: | :---: | :---: |
+| {Product} | {version} | {Live, in progress, or planned} |
+
+</div>
+
+## Scope
+
+{What this page governs, what it leaves out, and where that lives instead.}
+
+## Domain Terms
+
+<div align = "center">
+
+| Term | Meaning |
+| :---: | --- |
+| {Term} | {What it means here, and how it differs from common usage} |
+
+</div>
+
+## Users And Flows
+
+### {User Or Flow}
+
+  1. {The step the user takes, and what the product answers}.
+  2. {The next step}.
+
+## Requirements
+
+### {Product Or Area}
+
+  * {A requirement, in the present tense when it exists}.
+
+## Business Rules
+
+<div align = "center">
+
+| Rule | Why | Enforced In |
+| --- | --- | :---: |
+| {A rule of the domain} | {The reason, or the decision record} | `{code path}` |
+
+</div>
+
+{{ OPTIONAL: when it is not obvious where a feature belongs
+## Where A Feature Belongs
+
+<div align = "center">
+
+| Question | Yes | No |
+| --- | :---: | :---: |
+| {The question that decides it} | {Place} | {Next question, or place} |
+
+</div>
+}}
+
+## Out Of Scope
+
+  * {What the product does not do on purpose, and why}.
+
+</div>

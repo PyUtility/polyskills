@@ -1,0 +1,11 @@
+---
+name: {skill}
+description: >-
+  {The description of the shared skill, word for word}
+{{ OPTIONAL: Claude Code keys the shared skill must not carry, such as disable-model-invocation, argument-hint or paths
+{key}: {value}
+}}
+---
+
+Read `.agents/skills/{skill}/SKILL.md` from the repository root in full and follow it. Paths inside it are relative to
+`.agents/skills/{skill}/`.

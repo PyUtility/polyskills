@@ -1,0 +1,4 @@
+# Codex starts a skill on its own unless this file says otherwise, and
+# this one restructures a repository: run it only when the user asks.
+policy:
+  allow_implicit_invocation: false

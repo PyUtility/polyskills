@@ -1,0 +1,21 @@
+<div align = "center">
+
+# Pending Tasks
+
+</div>
+
+<div align = "justify">
+
+The open tasks of the project. A coding agent can take one up, and a task may also carry an issue or a pull request. A
+task file is removed only when every item of its "Done When" list holds, tests included, and git history keeps it. A gap
+that still needs the owner's decision is in [gaps-and-risks.md](../gaps-and-risks.md), not here.
+
+<div align = "center">
+
+| Task | Issue | Pull Request |
+| :---: | :---: | :---: |
+| [{Task Name}]({task}.md) | {Number, or none} | {Number, or none} |
+
+</div>
+
+</div>

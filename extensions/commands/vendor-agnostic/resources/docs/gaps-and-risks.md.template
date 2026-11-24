@@ -1,0 +1,29 @@
+<div align = "center">
+
+# Gaps And Risks Register
+
+</div>
+
+<div align = "justify">
+
+What the repository promises but does not contain, what is wrong or risky, and what was left unchanged on purpose.
+Nothing listed here was invented to close the gap: each item waits for the owner's decision. Remove an item once it is
+resolved.
+
+## Missing Or Stale
+
+  * **{Subject}.** {What is missing or out of date, with the file and line}.
+
+## Security
+
+  * **{Subject}.** {The risk, what limits it today, and what would close it; never the secret itself}.
+
+## Open Questions
+
+  * **{Subject}.** {The question, the options, and who decides}.
+
+## Wrong Comments And Docstrings
+
+  * `{file}:{line}`: {what it says, and what the code does}.
+
+</div>

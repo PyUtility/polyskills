@@ -1,0 +1,21 @@
+<div align = "center">
+
+# Architecture Decision Records
+
+</div>
+
+<div align = "justify">
+
+Each record captures one architecture decision: the context that forced it, the decision, and its consequences. Files
+are named `YYYY-MM-DD-<slug>.md` after the date the decision was accepted. A decision that changes later gets a new
+record that names the one it supersedes, and the old record only changes its status.
+
+<div align = "center">
+
+| Date | Decision | Status |
+| :---: | --- | :---: |
+| {YYYY-MM-DD} | [{Decision In Title Case}]({YYYY-MM-DD}-{slug}.md) | {Accepted, or superseded by which record} |
+
+</div>
+
+</div>

@@ -1,0 +1,18 @@
+---
+name: {role}
+description: >-
+  {The description of the shared agent, word for word}
+{{ OPTIONAL: when the role is restricted; keep Read in the list, or the agent cannot open its own instructions
+tools: {Claude Code tool names, comma separated}
+}}
+{{ OPTIONAL: when the role is read-only; Cursor reads this file too and knows only this key
+readonly: true
+}}
+{{ OPTIONAL: when the role needs its own model or color
+model: {model}
+color: {color}
+}}
+---
+
+Before anything else, read `.agents/agents/{role}.md` from the repository root in full. It is your system prompt: follow
+it as written.

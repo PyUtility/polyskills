@@ -1,0 +1,102 @@
+<div align = "center">
+
+# {Project Name} Architecture
+
+</div>
+
+<div align = "justify">
+
+{What the system is and what this page covers. Say when to read it: "open it when a change touches ...".} What the
+product does is in [PRODUCT.md](PRODUCT.md). When this page and the code disagree, the code wins, and the page is fixed.
+
+## What To Read Before You Change Something
+
+<div align = "center">
+
+| If You Are Changing | Read | Primary Source |
+| :---: | --- | --- |
+| {An area} | [{Section}](#{anchor}) | `{code path}` |
+| {A component with its own page} | [{page}.md]({page}.md) | `{code path}` |
+
+</div>
+
+## System Overview
+
+{Two or three paragraphs: the parts, what each is responsible for, and how they fit together.}
+
+```text
+{A diagram of the parts and the data that moves between them}
+```
+
+## Tech Stack
+
+<div align = "center">
+
+| Layer | Technology | Version | Why |
+| :---: | :---: | :---: | --- |
+| {Layer} | {Technology} | {version} | {The reason, or the decision record} |
+
+</div>
+
+## Components
+
+<div align = "center">
+
+| Component | Path | Role | Page |
+| :---: | :---: | --- | :---: |
+| {Component} | `{code path}` | {What it does and what depends on it} | [{page}.md]({page}.md) |
+
+</div>
+
+## Data Flow
+
+  1. {Where data enters, what checks it, and where it goes}.
+  2. {The next step}.
+
+## Boundaries
+
+The constraints that hold the system together. Breaking one needs a decision record first.
+
+<div align = "center">
+
+| Constraint | Why It Holds |
+| --- | --- |
+| {A rule that services, modules, or layers follow} | {What breaks without it} |
+
+</div>
+
+## Build And Deploy
+
+{The build order, what a failure does, and how a release reaches production.}
+
+```shell
+$ {build command}
+```
+
+{{ OPTIONAL: when the build needs something in place first
+### Preconditions
+
+  * {A version, role, extension, or service that must exist, and why}.
+}}
+
+## Quality Gates
+
+<div align = "center">
+
+| Command | Checks |
+| :---: | --- |
+| `{command}` | {What it proves, and where CI runs it} |
+
+</div>
+
+{{ OPTIONAL: when the project versions its parts
+## Versioning
+
+  * {The scheme, where the version lives, and what a change must update}.
+}}
+
+## Extending The System
+
+{How to add the thing people add most often, step by step, with the files each step touches.}
+
+</div>

@@ -21,14 +21,15 @@ description: >-
 
 This skill governs every `*.md` file in the repository: `README.md`, `SKILL.md`, `AGENT.md`, `CHANGELOG.md`, and any
 other documentation page. Read the **entire** target file before making any change, even a single-line edit. Apply every
-rule below before generating output. Two files are exceptions: `CLAUDE.md` (see **CLAUDE.md Exception**) and
-`CODE_OF_CONDUCT.md`, which is copied verbatim from its template (see **CODE_OF_CONDUCT.md**).
+rule below before generating output. Two kinds of file are exceptions: the context files that coding assistants load as
+raw text, such as `CLAUDE.md` and `AGENTS.md` (see **Context File Exception**), and `CODE_OF_CONDUCT.md`, which is
+copied verbatim from its template (see **CODE_OF_CONDUCT.md**).
 
 ## Getting Started
 
   1. Read the **entire** target file first - understand the existing headings, div structure, badge order, and list
      style.
-  2. Identify the *file role* (README, SKILL/AGENT, CHANGELOG, `CODE_OF_CONDUCT.md`, `CLAUDE.md`, or general doc) -
+  2. Identify the *file role* (README, SKILL/AGENT, CHANGELOG, `CODE_OF_CONDUCT.md`, context file, or general doc) -
      each has distinct layout rules.
   3. Always follow the conventions in this skill. Never invent new layout patterns.
   4. Apply every rule before generating output. Never skip reading the skill even for a small change.
@@ -49,8 +50,8 @@ These rules apply to every Markdown file regardless of role.
 
 ### HTML Div Wrappers
 
-Every Markdown file in this repository (except `CLAUDE.md`) uses two HTML div wrappers. Always include both and never
-merge them.
+Every Markdown file in this repository (except the context files) uses two HTML div wrappers. Always include both and
+never merge them.
 
 ```markdown
 <div align = "center">
@@ -255,7 +256,7 @@ file. Common assignments in this repo:
 </div>
 
   * Never use emoji on `###` or deeper headings - only `##` headings carry an emoji.
-  * Do **not** use emoji in `SKILL.md`, `AGENT.md`, `CHANGELOG.md`, or `CLAUDE.md` section headings.
+  * Do **not** use emoji in `SKILL.md`, `AGENT.md`, `CHANGELOG.md`, or context file section headings.
 
 ## SKILL.md and AGENT.md Layout
 
@@ -328,21 +329,25 @@ Create a `CODE_OF_CONDUCT.md` only when the user asks for one. Copy
 the other rules in this skill to it: its reference-style links, list markers, line wrapping, and Contributor Covenant
 badge stay exactly as they are. Never edit an existing `CODE_OF_CONDUCT.md` unless the user asks.
 
-## CLAUDE.md Exception
+## Context File Exception
 
-`CLAUDE.md` (and `CLAUDE.local.md`) is not a page for people to read. Claude Code loads it into the model context as
-instructions at the start of every session - every `CLAUDE.md` from the working directory up to the root, plus one in a
-subdirectory when Claude works on files there (see the [Claude Code memory
-docs](https://code.claude.com/docs/en/memory)). Decoration in this file costs context on every request, and some syntax
-has a special meaning, so this skill governs it only in part. When creating or editing a `CLAUDE.md`:
+`CLAUDE.md` (and `CLAUDE.local.md`), `AGENTS.md`, `GEMINI.md`, and `.github/copilot-instructions.md` are not pages for
+people to read. Coding assistants load them into the model context as instructions at the start of every session: Claude
+Code, for example, loads every `CLAUDE.md` from the working directory up to the root, plus one in a subdirectory when
+Claude works on files there (see the [Claude Code memory docs](https://code.claude.com/docs/en/memory)). Decoration in
+these files costs context on every request, and some syntax has a special meaning, so this skill governs them only in
+part. When creating or editing one of them:
 
-  * Do **not** add the `center` and `justify` div wrappers, badges, or emoji heading prefixes. Only block-level HTML
-    comments (`<!-- ... -->`) are stripped before loading; any other HTML reaches the model as raw text.
-  * Do **not** add YAML frontmatter. It has no meaning in `CLAUDE.md` - only `.claude/rules/*.md` files read
-    frontmatter, and only the `paths:` field.
-  * Any `@path` outside a code span or fenced code block is parsed as an import of that file. Keep real imports outside
-    code, and wrap every other literal `@` (an @-handle, a decorator) in backticks.
+  * Do **not** add the `center` and `justify` div wrappers, badges, or emoji heading prefixes. Claude Code strips only
+    block-level HTML comments (`<!-- ... -->`) before loading; any other HTML reaches the model as raw text. An existing
+    `AGENTS.md` that uses the wrappers keeps them until the user asks to restructure it.
+  * Do **not** add YAML frontmatter. It has no meaning in these files - in Claude Code, only `.claude/rules/*.md` files
+    read frontmatter, and only the `paths:` field.
+  * Any `@path` outside a code span or fenced code block is parsed as an import of that file, in `CLAUDE.md`, in an
+    `AGENTS.md` it imports, and in other vendors' files as well. Keep real imports outside code, and wrap every other
+    literal `@` (an @-handle, a decorator) in backticks.
   * Keep the file short and specific - the official guidance is under 200 lines, using plain headings and bullet lists.
+    An entry point that only hands over to `AGENTS.md` stays under 15 lines.
   * Claude Code edits the file itself (`/init`, or a request to remember something), so keep a flat layout that new
     content can be appended to.
   * The remaining universal rules still apply: ATX headings in Title Case, `  * ` lists, fenced code blocks with a
@@ -372,7 +377,7 @@ has a special meaning, so this skill governs it only in part. When creating or e
   - [ ] Was a `CHANGELOG.md` built from the template, with the Python or non-Python variant confirmed with the user when
     unclear?
   - [ ] Was a `CODE_OF_CONDUCT.md` created only on request and copied verbatim from the template?
-  - [ ] Is a `CLAUDE.md` free of div wrappers, badges, emoji headings, and frontmatter, with every literal `@` in
-    backticks?
+  - [ ] Is a context file (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `copilot-instructions.md`) free of div wrappers,
+    badges, emoji headings, and frontmatter, with every literal `@` in backticks?
 
 </div>

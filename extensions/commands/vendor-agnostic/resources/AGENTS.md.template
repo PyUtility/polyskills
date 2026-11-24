@@ -1,0 +1,56 @@
+# {Project Name}
+
+{One or two sentences: what the repository is, its main parts, and the one rule every change must keep.}
+
+DO NOT read all files in `docs/` or `.agents/` upfront. Match the user's request against the routing table below and
+read ONLY the specific target file(s) required for the active task.
+
+## Universal Guardrails
+
+  * Install: `{command}`.
+  * Build: `{command}`.
+  * Test: `{command}`; one test: `{command}`.
+  * Lint and format: `{command}`.
+  * {The contract every change keeps, in one line, with the page that explains it}.
+  * Fix and improve only what exists. Record what is missing in `docs/gaps-and-risks.md` and ask before acting.
+  * Each fact lives in one file. Change it there, and update the page a change affects as its last step.
+  * Edit shared skills and agents only under `.agents/`; the files in vendor folders only point at them.
+
+## Shared Agents And Skills Registry
+
+When a trigger below matches the task, read that file in full and follow it, even if your tool did not offer it. To
+delegate to an agent your tool does not list, start a subagent and tell it to read the agent's file first; without
+subagents, take the role yourself.
+
+| Skill | Read When | File |
+| :---: | --- | :---: |
+| `{skill}` | {One-line trigger} | `.agents/skills/{skill}/SKILL.md` |
+
+| Agent | Delegate When | File |
+| :---: | --- | :---: |
+| `{role}` | {One-line trigger} | `.agents/agents/{role}.md` |
+
+{{ OPTIONAL: when the project depends on skills installed outside the repository
+| Required From Outside | Read When | Source |
+| :---: | --- | :---: |
+| `{skill}` | {One-line trigger, and what to do when it is missing} | [{source}]({link}) |
+}}
+
+{{ OPTIONAL: when the registry has more than 15 rows, in place of the paragraph and the tables above
+The registry lives in `SKILLS.md`. Read it when a task may match a skill or an agent your tool does not list.
+}}
+
+## Documentation Routing Table
+
+Read the row that matches the task, never a whole directory.
+
+| Task Touches | Read |
+| :---: | --- |
+| `{code path}` | `docs/{component}.md` |
+| `{code dir}/<name>/` for {name}, {name}, {name} | `docs/{group}/<name>.md` |
+| Setup, local development, environment, the agent files themselves | `docs/README.md` |
+| System design, tech stack, data flow, boundaries, build and deploy | `docs/ARCHITECTURE.md` |
+| Product scope, domain rules, user flows | `docs/PRODUCT.md` |
+| Why something is the way it is | `docs/decisions/README.md`, then the dated record |
+| Known gaps, open questions, risks | `docs/gaps-and-risks.md` |
+| Open tasks | `docs/tasks/README.md` |

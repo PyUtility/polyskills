@@ -38,6 +38,9 @@ to one document. Project memory, when enabled, lives in the repository and trave
      writes. The templates follow a common layout, and an installed format skill wins over them.
   6. Ask before you delete, rename, or move a file the user wrote, and before you copy anything from the per-machine
      memory into a file that git tracks.
+  7. Stop when the repository is vendor-agnostic: `AGENTS.md` at the root already routes tasks to documents, and
+     `CLAUDE.md` only imports it. This skill would move the router back into `CLAUDE.md`, where every other assistant
+     loses it. Tell the user, offer the `/vendor-agnostic` command instead, and go on only when they insist.
 
 ## Parameters
 
@@ -149,10 +152,12 @@ placeholder, and either keep an optional block without its markers or delete it 
   * Do not copy per-machine memory into the project without the user's confirmation, and never copy secrets or
     personal details.
   * Do not edit or delete the per-machine memory files.
+  * Do not move the router of a vendor-agnostic repository out of `AGENTS.md`.
 
 ## Quick Checklist
 
   - [ ] Did the user invoke the skill explicitly?
+  - [ ] Is the repository not vendor-agnostic already, or did the user insist?
   - [ ] Did I read every file I changed, in full, before changing it?
   - [ ] Is `CLAUDE.md` under 200 lines, free of HTML and front matter, with one routing row per task area?
   - [ ] Does every routing row point to a document that exists, and is every document reachable from a row?

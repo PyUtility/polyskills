@@ -1,0 +1,13 @@
+# Claude Code
+
+@AGENTS.md
+
+{{ OPTIONAL: when Claude Code needs something no other tool does
+## Claude Code Only
+
+  * {A setting, hook, or command that only Claude Code has, with the page that explains it}.
+}}
+
+{{ OPTIONAL: when the repository keeps a project memory for Claude Code
+@.claude/MEMORY.md
+}}

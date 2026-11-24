@@ -1,0 +1,10 @@
+# GitHub Copilot
+
+Read [AGENTS.md](../AGENTS.md) at the repository root in full before you answer or change anything, and follow it. It
+holds the commands, the rules, and the table that names the one page under `docs/` each task needs.
+
+{{ OPTIONAL: when Copilot needs something no other tool does
+## Copilot Only
+
+  * {A setting, prompt file, or agent that only Copilot has, with the page that explains it}.
+}}

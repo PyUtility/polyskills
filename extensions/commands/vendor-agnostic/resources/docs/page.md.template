@@ -1,0 +1,35 @@
+<div align = "center">
+
+# {Component Name}
+
+</div>
+
+<div align = "justify">
+
+{One or two sentences: what the component is, where it lives (`{code path}`), and what depends on it. Read this page
+before {the kinds of change that need it}.}
+
+## {How It Works}
+
+{The invariants, the order in which things run or build, and the contracts other parts depend on: what a reader cannot
+get quickly from the code.}
+
+{{ OPTIONAL: when commands apply only to this component
+## Commands
+
+```shell
+$ {command}
+```
+}}
+
+## Pitfalls And Limits
+
+  * {A trap or a limit, why it exists, and what to do about it}.
+
+{{ OPTIONAL: when other pages are often needed with this one
+## Related
+
+  * [{page}.md]({page}.md): {why a reader would go there next}.
+}}
+
+</div>

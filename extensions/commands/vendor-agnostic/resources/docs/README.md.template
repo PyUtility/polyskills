@@ -1,0 +1,124 @@
+<div align = "center">
+
+# {Project Name} Documentation
+
+</div>
+
+<div align = "justify">
+
+{One paragraph: what the repository holds, and that this page is for whoever sets it up or works in it.} What the
+product does is in [PRODUCT.md](PRODUCT.md), and how it is built is in [ARCHITECTURE.md](ARCHITECTURE.md).
+
+The documentation records what exists, in the present tense. Each topic has exactly one page. When a page and the code
+disagree, the code wins, and the page is fixed once the developer confirms it.
+
+## Getting Started
+
+### Prerequisites
+
+<div align = "center">
+
+| Tool | Version | Needed For |
+| :---: | :---: | --- |
+| {Tool} | {version} | {What breaks without it} |
+
+</div>
+
+### Setup
+
+```shell
+$ {install command}
+$ {first run command}
+```
+
+{The environment variables and where their values come from. Name them, and never write a secret value.}
+
+## Local Development
+
+<div align = "center">
+
+| Command | What It Does |
+| :---: | --- |
+| `{command}` | {What it does} |
+
+</div>
+
+{{ OPTIONAL: when the operating system changes how something works
+### Platform Notes
+
+  * {Windows, macOS, or Linux}: {the difference, and what to do about it}.
+}}
+
+## Repository Layout
+
+```text
+{path}/    {what lives there}
+{path}/    {what lives there}
+```
+
+## Documentation Map
+
+<div align = "center">
+
+| Page | Covers |
+| :---: | --- |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | System design, tech stack, data flow, boundaries, build and deploy |
+| [PRODUCT.md](PRODUCT.md) | Domain rules, user flows, product requirements |
+| [decisions/](decisions/README.md) | Every architecture decision, dated, with its context and consequences |
+| [{page}.md]({page}.md) | {What it covers} |
+
+</div>
+
+## Agentic Harness
+
+Every instruction, skill, agent, and page lives once in the repository, and each coding assistant reaches it from its
+own entry point. One copy keeps a single source of truth and spends fewer tokens. It also ships with the code, so a new
+machine, a new tool, or a second developer starts with the same knowledge.
+
+### File Layout
+
+An assistant reads the files marked "Yes" before any task, and the others only when a task needs them.
+
+<div align = "center">
+
+| Path | Role | Always Read |
+| :---: | --- | :---: |
+| [AGENTS.md](../AGENTS.md) | Guardrails, the registry of skills and agents, and the routing table | Yes |
+| `.agents/skills/<name>/SKILL.md` | Shared skills | No |
+| `.agents/agents/<role>.md` | Shared agent roles, with a name and a description as their only frontmatter | No |
+| `docs/` | One page per topic | No |
+| [CLAUDE.md](../CLAUDE.md) | Entry point of Claude Code: hands over to `AGENTS.md`, plus what only Claude Code needs | By its vendor |
+| [GEMINI.md](../GEMINI.md) | Entry point of Gemini CLI and Antigravity | By its vendor |
+| [copilot-instructions.md](../.github/copilot-instructions.md) | Entry point of GitHub Copilot | By its vendor |
+
+</div>
+
+### Vendor Files
+
+What each vendor folder holds, because no other tool can use it:
+
+<div align = "center">
+
+| Vendor | Path | Role |
+| :---: | :---: | --- |
+| Claude Code | `.claude/skills/`, `.claude/agents/` | Pointer files to `.agents/`, with the frontmatter only Claude Code reads |
+| {Vendor} | `{path}` | {What it does} |
+
+</div>
+
+### Adding A Skill Or An Agent
+
+  1. Write it once, as `.agents/skills/<name>/SKILL.md` or `.agents/agents/<role>.md`. The folder or file name matches
+     the frontmatter `name`, and no other `.md` file sits directly in either folder.
+  2. Add its pointer file, `.claude/skills/<name>/SKILL.md` or `.claude/agents/<role>.md`, with the same name and
+     description. Keys that only Claude Code understands go into the pointer.
+  3. Add its row to the registry in `AGENTS.md`.
+
+### Wiring A New Tool
+
+  1. A tool that reads `AGENTS.md` needs no file. For one that does not, add its own entry point, under 15 lines, that
+     hands over to `AGENTS.md`.
+  2. Keep the settings, hooks, and commands of the tool in its own folder, and list them under **Vendor Files**.
+  3. Never copy a rule, a skill, or a page into the folder of a tool. Point at the shared file.
+
+</div>

@@ -1,0 +1,47 @@
+---
+name: {role}
+description: >-
+  {When to delegate to this role, and what it returns. This frontmatter holds a name and a description, nothing else.}
+---
+
+<div align = "center">
+
+# {Role Name}
+
+</div>
+
+<div align = "justify">
+
+You are {the role} for this repository. {Its one job, and what it never does.}
+
+## Mandate
+
+  * {What the role covers, with the paths it works on}.
+
+## Boundaries
+
+  * Read: {the paths it may read}.
+  * Write: {the paths it may write, or "nothing": a read-only role reports and never edits}.
+  * Never: {what it must not touch or run}.
+
+## Procedure
+
+  1. {The first step, with the evidence it needs}.
+  2. {The next step}.
+
+## Return Contract
+
+{The exact shape of the final message, so that the main session can act on it.}
+
+```text
+{REPORT NAME}
+
+{Section}:
+  - {entry, or "none"}
+```
+
+## Quick Checklist
+
+  - [ ] {The most likely failure, as a question}?
+
+</div>

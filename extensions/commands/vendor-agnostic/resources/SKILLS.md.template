@@ -1,0 +1,46 @@
+<div align = "center">
+
+# {Project Name} Skills And Agents
+
+</div>
+
+<div align = "justify">
+
+The registry of every skill and agent the coding assistants share in this repository. It took over from
+[AGENTS.md](AGENTS.md) when the tables outgrew a file that every session loads, so this is the only copy. Match the task
+against the triggers and read only the files that match. How to add one is in
+[docs/README.md](docs/README.md#adding-a-skill-or-an-agent).
+
+## Skills
+
+<div align = "center">
+
+| Skill | Scope | Read When | File |
+| :---: | :---: | --- | :---: |
+| `{skill}` | {Whole repository, or the code path} | {One-line trigger} | `.agents/skills/{skill}/SKILL.md` |
+
+</div>
+
+## Agents
+
+<div align = "center">
+
+| Agent | Scope | Delegate When | File |
+| :---: | :---: | --- | :---: |
+| `{role}` | {Whole repository, or the code path} | {One-line trigger} | `.agents/agents/{role}.md` |
+
+</div>
+
+{{ OPTIONAL: when the project depends on skills installed outside the repository
+## Required From Outside
+
+<div align = "center">
+
+| Skill | Read When | Source |
+| :---: | --- | :---: |
+| `{skill}` | {One-line trigger, and what to do when it is missing} | [{source}]({link}) |
+
+</div>
+}}
+
+</div>
