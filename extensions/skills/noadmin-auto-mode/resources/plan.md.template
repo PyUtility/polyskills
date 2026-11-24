@@ -1,0 +1,138 @@
+<div align = "center">
+
+# Unattended Plan: {Task Title}
+
+</div>
+
+<div align = "justify">
+
+## Session
+
+<div align = "center">
+
+| Field | Value |
+| :---: | --- |
+| Status | `UNATTENDED` |
+| Skill | `noadmin-auto-mode`; after a context compaction or a resume, read `SKILL.md` and `rules/` again |
+| Started | {YYYY-MM-DD HH:MM and time zone, from the system clock} |
+| Returned | {None until the return, then the time and the message} |
+| Branch and commit | `{branch}` at `{commit}`, or not a git repository |
+| Files already changed | {the output of `git status --short` at the start} |
+| Ends when | The administrator writes `I'm back` or `I am back` in the chat |
+
+</div>
+
+## Tasks
+
+<div align = "center">
+
+| ID | Task in the Administrator's Words | Source | Status |
+| :---: | --- | :---: | :---: |
+| `T-1` | "{the exact request}" | {start, or `M-1`} | {not started, in progress, done, open, pending, or blocked} |
+
+</div>
+
+## Authorizations
+
+  * `T-1`: "{the exact words}" allow {the one action and target they name}.
+
+## Plan
+
+  - [ ] `T-1`, step 1: {what it does, the files it touches, and how it will be checked}.
+
+## Decisions
+
+### D-1: {The Decision in One Line}
+
+  * Task: `T-1`
+  * Decided: {what}
+  * Why: {the reason}
+  * Rejected: {an alternative}, because {the reason}. {One line for each alternative.}
+  * Touches: {files}
+  * Undo: {how}
+
+## Open Items
+
+### O-1: {The Question in One Line}
+
+  * Why it is open: {unsure about what, or what it would affect}
+  * Options: {an option and its effect}. {One line for each option.}
+  * Recommendation: {the option and the reason}. Not implemented.
+  * Waiting for it: {tasks and steps}
+
+## Pending
+
+<div align = "center">
+
+| ID | Kind | What | Required By | Waiting Behind It |
+| :---: | :---: | --- | :---: | --- |
+| `P-1` | {agent, action, or git} | {the agent with its scope and phase, or the exact command or text, what it changes, and how to undo it} | {skill or task} | {entries} |
+
+</div>
+
+## Research
+
+### Requested
+
+  * {The question}: {link}, read on {YYYY-MM-DD}. It settled {what}, and changed {step or decision}.
+
+### Needed
+
+  * {The question}: needed because {the reason}. The answer would change {what}. Look in {where}.
+
+## Workflow Log
+
+### W-1: {The Workflow}
+
+  * Purpose: {the task it serves and the question it answers}
+  * Input: {files, diff, or prompt}
+  * Time: {start} to {end}
+  * Outcome: {done, partial, failed, or blocked}
+  * Findings: {each finding with its evidence: file and line, command output, or link}
+  * Plan changes: {the entries it led to, and the workflow that runs next}
+
+## Messages
+
+<div align = "center">
+
+| ID | Time | Message | What Was Done |
+| :---: | :---: | --- | --- |
+| `M-1` | {HH:MM} | "{the exact words}" | {followed as a task, obeyed as a stop, or logged only} |
+
+</div>
+
+## Blocked Steps
+
+  * `T-1`, step {n}: {the error text}. Tried: {attempt 1}; {attempt 2}; {attempt 3}. Suspected cause: {cause}.
+
+## Notes
+
+  * `N-1`: {a problem outside the tasks, with file and line}. Not fixed.
+
+## Commit Messages
+
+### T-1
+
+```text
+{the commit message}
+```
+
+  * Files: {the files that belong to it, with the mixed ones marked}
+
+## Checklist
+
+### Work
+
+  - [ ] `T-1`: {what was done, how it was checked, and what is left}.
+
+### Rules
+
+  - [ ] `SKILL.md`: the plan came first, every decision is logged, and nothing is built on an open item.
+  - [ ] `rules/git.md`: {followed, or the rule number that was broken, what happened, and why}.
+  - [ ] `rules/integrity.md`: {the same}.
+  - [ ] `rules/protected-actions.md`: {the same}.
+  - [ ] `rules/research.md`: {the same}.
+  - [ ] `rules/subagents.md`: {the same}.
+  - [ ] `rules/workflows.md`: {the same}.
+
+</div>

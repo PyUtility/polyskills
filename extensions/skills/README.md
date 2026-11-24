@@ -9,6 +9,7 @@
 [![God Mode](https://img.shields.io/badge/God-%20Mode-DD0B78?style=plastic&logo=starship)](god-mode/SKILL.md)
 [![Humanize Text](https://img.shields.io/badge/Humanize-%20Text-15C39A?style=plastic&logo=grammarly)](humanize-text/SKILL.md)
 [![Markdown Format](https://img.shields.io/badge/Markdown-%20Format-000000?style=plastic&logo=markdown)](markdown-format/SKILL.md)
+[![Noadmin Auto Mode](https://img.shields.io/badge/Noadmin-%20Auto%20Mode-8D6E63?style=plastic)](noadmin-auto-mode/SKILL.md)
 [![Python Code Format](https://img.shields.io/badge/Python-%20Code%20Format-3776AB?style=plastic&logo=python)](python-code-format/SKILL.md)
 [![SQL Code Format](https://img.shields.io/badge/SQL-%20Code%20Format-4169E1?style=plastic&logo=postgresql)](sql-code-format/SKILL.md)
 
