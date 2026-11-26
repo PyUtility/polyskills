@@ -8,6 +8,7 @@
 [![Git Commiter](https://img.shields.io/badge/Git-%20Commiter-F05032?style=plastic&logo=git)](git-commiter/SKILL.md)
 [![God Mode](https://img.shields.io/badge/God-%20Mode-DD0B78?style=plastic&logo=starship)](god-mode/SKILL.md)
 [![Humanize Text](https://img.shields.io/badge/Humanize-%20Text-15C39A?style=plastic&logo=grammarly)](humanize-text/SKILL.md)
+[![Make ADR](https://img.shields.io/badge/Make-%20ADR-2E7D32?style=plastic)](make-adr/SKILL.md)
 [![Markdown Format](https://img.shields.io/badge/Markdown-%20Format-000000?style=plastic&logo=markdown)](markdown-format/SKILL.md)
 [![Noadmin Auto Mode](https://img.shields.io/badge/Noadmin-%20Auto%20Mode-8D6E63?style=plastic)](noadmin-auto-mode/SKILL.md)
 [![Python Code Format](https://img.shields.io/badge/Python-%20Code%20Format-3776AB?style=plastic&logo=python)](python-code-format/SKILL.md)

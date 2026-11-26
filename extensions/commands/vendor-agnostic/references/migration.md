@@ -77,7 +77,7 @@ that git ignores and that therefore stay untouched. Then wait.
 | Design, tech stack, data flow, boundaries, build, deploy, CI, versioning | `docs/ARCHITECTURE.md` |
 | Prerequisites, setup, environment variables, local commands, platform notes, the agent files | `docs/README.md` |
 | Detail about one component | `docs/<component>.md`, in folders that mirror the code |
-| A decision with its reason | `docs/decisions/YYYY-MM-DD-<slug>.md` |
+| A decision with its reason | `docs/decisions/XXXX-imperative-title.md` |
 | A known gap, risk, open question, or wrong code comment | `docs/gaps-and-risks.md` |
 | A task with its done criteria | `docs/tasks/<task>.md` |
 | A repeatable workflow | `.agents/skills/<name>/SKILL.md` |
@@ -122,24 +122,49 @@ A rule with a `paths`, `globs`, or `applyTo` filter keeps its meaning as a routi
 
 A committed memory file of one vendor, such as `.claude/MEMORY.md`, stays and is imported from that vendor's entry
 point. Facts in it that other tools need move out: preferences that hold for every task to the guardrails, decisions to
-dated records, environment facts to `docs/README.md`. What remains is short, dated, and points at the pages. Never copy
-the memory that a tool keeps outside the repository.
+decision records, environment facts to `docs/README.md`. What remains is short, dated, and points at the pages. Never
+copy the memory that a tool keeps outside the repository.
 
 ## Decisions
 
-  * One file per decision, named after the date it was accepted. When the text has no date, take the one of the commit
-    that first stated the decision, `git log --follow --diff-filter=A --format=%as -- <file>`, and record it under
-    **Date Source**. `git log -S "<phrase>"` finds a sentence that moved between files.
-  * Records that carry numbers (`0002-<slug>.md`) are renamed only when the user approves it in the map. Keep the old
-    name and number under **Former Name**, because commits, code comments, and issues still use them, and update every
+Decision records follow the `make-adr` skill, which owns them. The two templates in `resources/docs/decisions/` are
+exact copies of its templates: change them there first, then copy them here. When `make-adr` is installed, its rules
+govern every record this command writes or moves. What follows is the part a migration needs.
+
+  * **Directory.** The decisions directory is the one `make-adr` recorded in the instruction files, or else the one
+    that already holds records. Moving it into `docs/decisions/` is a row in the map like any other. When it moves,
+    update the line or routing row that recorded it. When the user declines, the records stay where they are, the
+    routing row in `AGENTS.md` names that directory, and the report explains the old-location warning of the check.
+  * **Naming.** One file per decision, named `XXXX-imperative-title.md`: a four-digit sequence number, then the title
+    in lowercase kebab-case, starting with its verb. "Use PostgreSQL for Sessions" becomes
+    `0003-use-postgresql-for-sessions.md`, and `ADR Title` and the `#` heading read `Use PostgreSQL for Sessions`.
+  * **Numbers.** A record that already carries a number keeps it. Decisions without one take the next free numbers in
+    the order they were accepted, oldest first. A record is never deleted. A missing one is a question for the user,
+    and the default is to renumber the records after the gap and update every link to them, as `make-adr` does.
+  * **Content.** Write only what the old text states. A required section it says nothing about reads `Not assessed`,
+    and an optional section it says nothing about is left out. A decision in force is `ACCEPTED`.
+  * **Dates.** `Created On` holds the date the decision was accepted and its author. When the text has neither, take
+    both from the commit that first stated it, `git log --follow --diff-filter=A --format="%as (%an)" -- <file>`.
+    `git log -S "<phrase>"` finds a sentence that moved between files.
+  * **Origin.** The last line of the summary names the file the record came from, its old name when it was renamed
+    (commits, code comments, and issues still use it), and the file whose history gave the date. Update every
     reference inside the repository.
-  * A superseded decision keeps its record. Only its status changes.
+  * **Additions.** A decision that only adds to an existing record, and leaves everything it decided true, goes into
+    that record: a dated entry under **ADR Additional Changes**, and `(added YYYY-MM-DD)` after each line it adds to
+    another section.
+  * **Replacements.** A decision that reverses or replaces part of a record gets a record of its own. The old record
+    is superseded as a whole: it keeps its text, and only its status, its links, and its remark change.
+  * **Renames.** A record named another way, such as `YYYY-MM-DD-<slug>.md`, two records that share a number, and a
+    record in another layout are renamed or rewritten only when the user approves it in the map.
+  * **Index.** The `README.md` of the directory, from its template: one row per record with its number, its slug
+    linked to the file, its status flag, and its tags, and a row in the replacement table for each superseded record.
 
 ## Conflicts
 
-When two sources disagree about what exists, the code decides. When they disagree about a rule, the newer dated decision
-wins, and an undated conflict is a question for the user. Never merge two versions into a third, and never settle a
-conflict silently. While the question is open, it stands in `docs/gaps-and-risks.md`.
+When two sources disagree about what exists, the code decides. When they disagree about a rule, the decision with the
+later date wins (its `Created On`, or the date of the addition that states it), whatever its number, and an undated
+conflict is a question for the user. Never merge two versions into a third, and never settle a conflict silently.
+While the question is open, it stands in `docs/gaps-and-risks.md`.
 
 ## Names And Case
 

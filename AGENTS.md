@@ -25,6 +25,7 @@ The canonical skills live under [`extensions/skills/`](./extensions/skills/). Ea
 | `dbml-code-format` | Creating, editing, or reviewing any `*.dbml` schema diagram (dbdiagram.io free tier). |
 | `flaunt-product` | Only when explicitly invoked - executive-ready rewrite of business prose, with every fact kept. |
 | `git-commiter` | Creating, amending, or writing any git commit message in this repository. |
+| `make-adr` | Only when the user asks for an ADR - researches the decision with them, then records it in the repository's ADR directory (`docs/decisions/` by default). |
 | `markdown-format` | Creating, editing, or reviewing any `*.md` file (README, SKILL, AGENT, docs). |
 | `noadmin-auto-mode` | Only when explicitly invoked - unattended work in auto mode until the user writes "I'm back". |
 | `python-code-format` | Creating, editing, or reviewing any `*.py` file or Python code. |

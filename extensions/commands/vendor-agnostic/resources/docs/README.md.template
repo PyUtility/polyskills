@@ -64,7 +64,7 @@ $ {first run command}
 | :---: | --- |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | System design, tech stack, data flow, boundaries, build and deploy |
 | [PRODUCT.md](PRODUCT.md) | Domain rules, user flows, product requirements |
-| [decisions/](decisions/README.md) | Every architecture decision, dated, with its context and consequences |
+| [decisions/](decisions/README.md) | Every architecture decision, numbered, with its context and the alternatives it beat |
 | [{page}.md]({page}.md) | {What it covers} |
 
 </div>

@@ -34,7 +34,7 @@ Every `FAIL` is fixed. Every `WARN` is fixed, or explained in the report with th
 | Entry points | Under 15 lines, hand over to `AGENTS.md` in the form their vendor loads, nothing loaded twice |
 | Skills and agents | Standard frontmatter, names that match, a registry row, no stray `.md` file that a tool would load |
 | Vendor folders | Every pointer exists and matches its shared file; a link is stored, checked out, and resolved correctly, and no junction sits over it |
-| Pages | Relative links resolve with the exact case, every page is reachable, records are dated, no paragraph stands in two files |
+| Pages | Relative links resolve with the exact case, every page is reachable, records are named `XXXX-imperative-title.md` with no number twice, no paragraph stands in two files |
 | Repository | Nothing of the layout is ignored by git, no template text is left, no old location remains, no two paths differ only in case |
 
 </div>

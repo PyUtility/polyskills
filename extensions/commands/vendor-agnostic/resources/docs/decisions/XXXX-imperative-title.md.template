@@ -1,0 +1,99 @@
+---
+ADR Title: [Imperative Short Title]
+ADR Status: [PROPOSED | ACCEPTED | DEPRECATED | SUPERSEDED (ADR-XXXX)]
+Created On: [YYYY-MM-DD] ([GIT Author Name])
+Document Tag(s): [Two to Five Lowercase Kebab-Case Tags, Comma-Separated]
+Related Link(s): [ADR-XXXX, Issue or Source URLs, or None]
+---
+
+<div align = "center">
+
+# [Imperative Short Title]
+
+</div>
+
+<div align = "justify">
+
+{
+  Context and Problem Statement: Executive Summary
+
+  Describe the technical and business forces driving this decision in
+  2-3 concise paragraphs. Write this for an engineer joining two years
+  from now who has zero tribal knowledge. The paragraph must follow
+  with an unordered list that describes:
+
+    * What is the current bottleneck, risk, or missing capability?
+    * What happens if we do nothing?
+}
+
+## ADR Additional Changes
+
+*(Optional: delete this section from a new record, and add it back here with the first additional decision)*
+
+  * [YYYY-MM-DD]: [Short paragraph on the new decision - what was decided, the options it beat and why, and what it
+    added to the record]
+  * [...]
+
+## Decision Drivers & Constraints
+
+*(List the non-negotiable requirements, quality attributes, and hard constraints shaping the choice)*
+
+  * **Scale / Performance:** [e.g., Must handle 15k writes/sec at p99 < 50ms]
+  * **Operational Overhead:** [e.g., Must be managed/SaaS; team lacks bandwidth to self-host]
+  * **Security & Compliance:** [e.g., Must support SOC2 audit logging and PII encryption at rest]
+  * **Organizational / Timeline:** [e.g., Must ship before Q4 peak traffic; existing team knows Go/Python]
+
+## Considered Options
+
+  1. **[Option 1: Name]** - [One-sentence summary]
+  2. **[Option 2: Name]** - [One-sentence summary]
+  3. **[Option 3: Status Quo / Do Nothing]** - [One-sentence summary]
+
+### Detailed Comparison
+
+  * ✅ **[Option 1: Name]** - [Strength Tied to a Decision Driver]
+  * ✅ **[Option 1: Name]** - [...]
+  * ❌ **[Option 1: Name]** - [Weakness Tied to a Decision Driver]
+  * ❌ **[Option 1: Name]** - [...]
+  * ✅ **[Option 2: Name]** - [Strength Tied to a Decision Driver]
+  * ✅ **[Option 2: Name]** - [...]
+  * ❌ **[Option 2: Name]** - [Weakness Tied to a Decision Driver]
+  * ❌ **[Option 2: Name]** - [...]
+  * [...]
+
+## Decision Outcome
+
+**Chosen Option:** **[Option X]**, because [concise summary of why it best satisfies the decision drivers over the
+alternatives].
+
+### Scope & Boundaries
+
+  * **In Scope:** [Where this applies - e.g., All new tier-1 microservices]
+  * **Out of Scope / Exceptions:** [Where this does NOT apply - e.g., Legacy monolith modules scheduled for retirement]
+
+## Consequences & Trade-Offs
+
+*(Optional: keep this section only when the user discussed the consequences and trade-offs of the decision; the
+Migration & Rollout Impact subsection below stays either way, as a `###` heading under Decision Outcome)*
+
+  * ✅ [Describe a Benefit (1)]
+  * ✅ [Describe a Benefit (2)]
+  * ✅ [Describe a Benefit (...)]
+  * ❌ [Describe a Drawback (1)]
+  * ❌ [Describe a Drawback (2)]
+  * ❌ [Describe a Drawback (...)]
+
+### Migration & Rollout Impact
+
+[How existing code/data transitions, or state "Greenfield only; no migration required"]
+
+## Compliance, Enforcement & Validation
+
+*(Optional: keep this section only when the user discussed how the decision is enforced and validated. Crucial for
+large codebases to prevent silent erosion of the decision)*
+
+  * **Fitness Functions / CI Checks:** [e.g., ArchUnit test blocking direct DB calls, ESLint rule, Terraform policy]
+  * **Observability / Success Metrics:** [How we will verify in 3 months that this worked - e.g., p99 latency dashboard]
+  * **Revisit Trigger:** [Condition that invalidates this ADR - e.g., "Re-evaluate if message volume exceeds 100k/sec"]
+
+</div>

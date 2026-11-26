@@ -51,6 +51,6 @@ Read the row that matches the task, never a whole directory.
 | Setup, local development, environment, the agent files themselves | `docs/README.md` |
 | System design, tech stack, data flow, boundaries, build and deploy | `docs/ARCHITECTURE.md` |
 | Product scope, domain rules, user flows | `docs/PRODUCT.md` |
-| Why something is the way it is | `docs/decisions/README.md`, then the dated record |
+| Why something is the way it is | `docs/decisions/README.md`, then the matching record |
 | Known gaps, open questions, risks | `docs/gaps-and-risks.md` |
 | Open tasks | `docs/tasks/README.md` |

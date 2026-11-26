@@ -241,13 +241,27 @@ check_pages() {
         [ -n "$reached" ] || warn "$page is reachable neither from AGENTS.md nor from a docs index"
     done
 
+    # a record is XXXX-imperative-title.md; renaming one needs the user's approval
     printf '%s\n' "$FILES" | grep -E '^docs/decisions/[^/]+\.md$' | while IFS= read -r page; do
         case "${page##*/}" in
-            README.md | [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[a-z0-9]*.md) ;;
-            [0-9][0-9][0-9][0-9]-[a-z]*.md) warn "$page keeps a number; a new record is named YYYY-MM-DD-<slug>.md" ;;
-            *) fail "$page is not named YYYY-MM-DD-<slug>.md" ;;
+            README.md) ;;
+            [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-*.md)
+                warn "$page carries a date; a record is named XXXX-imperative-title.md"
+                ;;
+            [0-9][0-9][0-9][0-9]-*[!a-z0-9.-]*.md | [0-9][0-9][0-9][0-9]-[!a-z]*.md)
+                warn "$page has a title that is not lowercase kebab-case starting with its verb"
+                ;;
+            [0-9][0-9][0-9][0-9]-*.md) ;;
+            *) fail "$page is not named XXXX-imperative-title.md" ;;
         esac
     done
+
+    # a dated name also starts with four digits, so it is left out of the count
+    printf '%s\n' "$FILES" | grep -v '^docs/decisions/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-' |
+        sed -n 's|^docs/decisions/\([0-9][0-9][0-9][0-9]\)-[^/]*\.md$|\1|p' | sort | uniq -d |
+        while IFS= read -r number; do
+            fail "docs/decisions/ holds more than one record numbered $number"
+        done
 }
 
 
@@ -611,11 +625,19 @@ check_placeholders() {
         while IFS= read -r file; do
             [ -f "$file" ] || continue
             case "$file" in */*) strict=0 ;; *) strict=1 ;; esac
-            found=$(awk -v strict="$strict" '
+            # decision records come from the make-adr templates, which mark
+            # template text with [...], a bare { ... } block, and *(...)* notes
+            case "$file" in docs/decisions/*) adr=1 ;; *) adr=0 ;; esac
+            found=$(awk -v strict="$strict" -v adr="$adr" '
                 { sub(/\r$/, "") }
                 /^[ \t]*(```|~~~)/ { fence = !fence; next }
                 fence { next }
                 /\{\{ OPTIONAL/ || /^\}\}$/ { printf "%s ", FNR; next }
+                adr && (/^[ \t]*[{}][ \t]*$/ || /^\*\(/ ||
+                    /Imperative Short Title|GIT Author Name/ ||
+                    /\[(e\.g\.|Option [0-9X]|Describe a|One-sentence|Strength Tied|Weakness Tied|YYYY-MM-DD|PROPOSED [|]|Short paragraph|concise summary|Where this|How existing|How we will|Condition that|Two to Five|ADR-XXXX,|\.\.\.)/) {
+                    printf "%s ", FNR; next
+                }
                 strict && /\{(command|skill|role|component|group|name|page|path|source|link|code path|code dir)\}/ { printf "%s ", FNR; next }
                 { gsub(/`[^`]*`/, "") }
                 /\{[A-Z][A-Za-z-]*( [^{}]*)?\}/ { printf "%s ", FNR }

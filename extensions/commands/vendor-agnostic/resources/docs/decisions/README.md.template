@@ -6,16 +6,31 @@
 
 <div align = "justify">
 
-Each record captures one architecture decision: the context that forced it, the decision, and its consequences. Files
-are named `YYYY-MM-DD-<slug>.md` after the date the decision was accepted. A decision that changes later gets a new
-record that names the one it supersedes, and the old record only changes its status.
+The architecture decision records capture why each important decision was made and what follows from it. Each file is
+named `XXXX-imperative-title.md`, where `XXXX` is a sequence number that follows the Nygard format. The layout builds
+on [MADR (Markdown Any Decision Records)](https://adr.github.io/madr/), tailored for large repositories.
 
 <div align = "center">
 
-| Date | Decision | Status |
-| :---: | --- | :---: |
-| {YYYY-MM-DD} | [{Decision In Title Case}]({YYYY-MM-DD}-{slug}.md) | {Accepted, or superseded by which record} |
+| ADR # | Decision Slug | ADR Status | Document Tag(s) |
+| :---: | --- | :---: | :---: |
 
 </div>
+
+The ADR Status flag always shows a record's current state: (I) 🚧: ADR document is proposed, (II) ✅: ADR document is
+accepted, (III) ❌: ADR document is deprecated, and (IV) 🛠️: ADR document is superseded with a new decision. The table
+below pairs each replaced record with its replacement, and it stays empty until a decision is replaced.
+
+<div align = "center">
+
+| Previous ADR File | Updated ADR File |
+| :---: | :---: |
+
+</div>
+
+A coding assistant finds the relevant records by their tags, then reads how and why each decision was made and what it
+asks for, together with the dated additional changes near the top of a record, which extend its decision. When a newer
+record replaces an older one, the assistant reads the newer record in full before it acts on the decision, and never
+reverts to the older one on its own.
 
 </div>

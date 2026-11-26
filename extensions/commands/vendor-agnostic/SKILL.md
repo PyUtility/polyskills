@@ -86,7 +86,7 @@ docs/
     README.md                    setup, local development, repository overview, the agent files
     ARCHITECTURE.md              system design, tech stack, data flow, boundaries
     PRODUCT.md                   domain logic, user flows, product requirements
-    decisions/                   README.md and one YYYY-MM-DD-<slug>.md per decision
+    decisions/                   README.md and one XXXX-imperative-title.md per decision
     <component>.md, <group>/     one page per component, mirroring the code
     gaps-and-risks.md, tasks/    only when there is something to hold
 ```
@@ -194,8 +194,10 @@ Work one destination file at a time, and tick its rows off in the map.
 
   1. Architecture, tech stack, and boundaries go to `docs/ARCHITECTURE.md`; product rules and domain logic to
      `docs/PRODUCT.md`; onboarding, environment, and local commands to `docs/README.md`; component detail to its page.
-  2. Historical decisions become dated records. When the text has no date, take it from `git log` and say so in the
-     record.
+  2. Historical decisions become records in the format of the `make-adr` skill, `XXXX-imperative-title.md`, numbered
+     in the order they were accepted, with that date in `Created On`; when the text has none, take it from `git log`
+     and say so in the record. A decision that only adds to an existing record joins it as a dated additional change
+     (see [migration](references/migration.md)).
   3. Reusable workflows become `.agents/skills/<name>/SKILL.md`, and personas `.agents/agents/<role>.md`, with the
      shared frontmatter of [vendors](references/vendors.md). Keys of one vendor go to its pointer.
   4. Write only what you checked against the code. Keep the owner's wording where it is accurate.
@@ -255,7 +257,7 @@ Keep it short, in this order:
 | [`resources/CLAUDE.md.template`](resources/CLAUDE.md.template), [`GEMINI.md.template`](resources/GEMINI.md.template), [`copilot-instructions.md.template`](resources/copilot-instructions.md.template) | The entry points |
 | [`resources/SKILL.md.template`](resources/SKILL.md.template), [`agent.md.template`](resources/agent.md.template) | A shared skill, a shared agent |
 | [`resources/pointer-skill.md.template`](resources/pointer-skill.md.template), [`pointer-agent.md.template`](resources/pointer-agent.md.template) | The Claude Code pointers |
-| [`resources/docs/`](resources/docs/) | The pages: `README`, `ARCHITECTURE`, `PRODUCT`, a component page, gaps and risks, decisions, tasks |
+| [`resources/docs/`](resources/docs/) | The pages: `README`, `ARCHITECTURE`, `PRODUCT`, a component page, gaps and risks, decisions (copies of the `make-adr` templates), tasks |
 | [`references/migration.md`](references/migration.md) | Inventory, the map, where content goes, re-pointing, deleting |
 | [`references/vendors.md`](references/vendors.md) | What each vendor reads, shared frontmatter, native agent files |
 | [`references/links.md`](references/links.md) | Pointer files, symlinks, and why junctions are banned |
@@ -263,7 +265,9 @@ Keep it short, in this order:
 
 </div>
 
-Templates mark a placeholder as `{name}` and an optional block as `{{ OPTIONAL: <when> ... }}`.
+Templates mark a placeholder as `{name}` and an optional block as `{{ OPTIONAL: <when> ... }}`. The two decision
+templates are copies of the `make-adr` skill's and use its markers instead: `[...]` for a value, `{ ... }` for an
+instruction block, and a note in italics under each optional section.
 
 ## Working With Other Skills
 
@@ -271,6 +275,8 @@ Templates mark a placeholder as `{name}` and an optional block as `{{ OPTIONAL: 
     command decides what the files are and where they live.
   * `extend-init` builds a Claude-only layout with the router in `CLAUDE.md`. After this command has run, `AGENTS.md` is
     the router, so do not run `extend-init` on the same repository.
+  * `make-adr` owns the decision records. This command writes and moves them in its format, keeps the decisions
+    directory it recorded unless the user approves a move in the map, and leaves new decisions to it.
 
 ## What Not To Do
 
